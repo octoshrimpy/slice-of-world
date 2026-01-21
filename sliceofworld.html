@@ -1,0 +1,2260 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Slice-of-World Generator</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+
+      @font-face {
+        font-family: "unifontex";
+        src: url("https://stgiga.github.io/UnifontEX/UnifontExMono.ttf");
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+      }
+      :root {
+        --bg: #0b0e12;
+        --fg: #e6e9ef;
+        --mut: #9aa3ad;
+        --acc: #5ee1a7;
+        --btn: #1a1f26;
+        --br: #2a3038;
+      }
+      html,
+      body {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: "unifontex", system-ui, Segoe UI, Roboto, Inter,
+          sans-serif;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: center;
+        padding: 12px;
+        border-bottom: 1px solid var(--br);
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0 12px 0 0;
+        color: var(--acc);
+      }
+      label {
+        color: var(--mut);
+        font-size: 12px;
+      }
+      input,
+      select,
+      button {
+        background: var(--btn);
+        color: var(--fg);
+        border: 1px solid var(--br);
+        border-radius: 6px;
+        padding: 7px 10px;
+      }
+      input[type="text"] {
+        min-width: 10rem;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:active {
+        transform: translateY(1px);
+      }
+
+      .wrap {
+        flex-grow: 1;
+        padding: 12px;
+        display: flex;
+        gap: 12px;
+      }
+
+      .pane {
+        border: 1px solid var(--br);
+        border-radius: 8px;
+        padding: 10px;
+        background: #0f1318;
+        position: relative;
+
+        display: flex;
+      }
+
+      .pane:first-of-type {
+        flex-grow: 1;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      pre {
+        white-space: pre;
+        overflow: auto;
+        margin: 0;
+        font-family: "unifontex", system-ui, Segoe UI, Roboto, Inter, sans-serif;
+      }
+
+      #out {
+        flex: 1;
+        text-wrap: balance;
+
+        .xref {
+          text-decoration: underline;
+          text-decoration-color: var(--mut);
+          transition: all 0.15s ease-in-out;
+
+          &.is-hot {
+            text-decoration: none;
+          }
+        }
+      }
+
+      .mapwrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+      /* Larger, square-cell minimap */
+      #map {
+        margin-top: 8px;
+        font-size: 2.5ch;
+        line-height: 1.25ch;
+        overflow: visible;
+        cursor: pointer;
+      }
+      #map span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75ch;
+        height: 1.75ch;
+        transition: all 0.15s ease-in-out;
+        border-radius: 50%;
+        &:hover {
+          transform: scale(1.3);
+        }
+      }
+      /* ~ water, ^ mountain, ᵞ grass, ↟ forest, · plain */
+      #map span[data-tile="water"] {
+        color: #1666c7;
+      }
+      #map span[data-tile="mountain"] {
+        color: #95a9bd;
+      }
+      #map span[data-tile="forest"] {
+        color: #00bb4e;
+      }
+      #map span[data-tile="grass"] {
+        color: #328a1c;
+      }
+      #map span[data-tile="plains"] {
+        color: #768f35;
+      }
+      #map span[data-tile="settlement"] {
+        color: #da15b6;
+      }
+
+      .small {
+        font-size: 12px;
+        color: var(--mut);
+      }
+      ul.list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      ul.list li {
+        background: var(--btn);
+        border: 1px solid var(--br);
+        padding: 4px 7px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      ul.list li:hover {
+        border-color: var(--acc);
+      }
+      .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .mut {
+        color: var(--mut);
+      }
+      .sep {
+        height: 10px;
+      }
+      .pill {
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--br);
+        background: #0c1015;
+      }
+      .pill.seedpill {
+        margin-top: 2rem;
+      }
+      .nowrap {
+        white-space: nowrap;
+      }
+      .seedpill {
+        margin-left: 6px;
+        color: #bfead8;
+        border-color: #254c3f;
+        background: #0b1512;
+      }
+      @media (max-width: 45rem) {
+        .wrap {
+          flex-direction: column;
+        }
+      }
+      .hidden {
+        display: none;
+      }
+      button.primary {
+        background: rgba(from var(--acc) r g b / 0.7);
+        color: var(--bg);
+        font-weight: bold;
+        transition: all ease-in-out 0.15s;
+
+        &:hover {
+            background: rgba(from var(--acc) r g b / 0.8);
+         }
+      }
+      /* ===== cross-hover linking ===== */
+      #map span.is-hot {
+        position: relative;
+        transform-origin: center center;
+        transform: scale(1.5);
+        /* filter: drop-shadow(0 0 50% rgba(94, 225, 167, 0.35)); */
+        /* outline: 1px solid rgba(94, 225, 167, 0.55); */
+        
+        &::before {
+          display: flex;
+          height: 1.5rem;
+          width: 1.5rem;
+          border: 2px solid var(--acc);
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          background: var(--bg);
+          z-index: -1;
+          pointer-events: none;
+        }
+      }
+
+      #out .xref {
+        cursor: pointer;
+        border-radius: 4px;
+        padding: 0 2px;
+      }
+
+      #out .xref.is-hot {
+        color: var(--acc);
+        background: rgba(94, 225, 167, 0.12);
+        outline: 1px solid rgba(94, 225, 167, 0.28);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Slice-of-World</h1>
+      <div class="row">
+        <label for="seed">Seed</label>
+        <input id="seed" type="text" placeholder="Leave blank for random" />
+        <label for="theme">Theme</label>
+        <select id="theme" class="nowrap" title="Theme">
+          <option value="rnd">Random (seed-based)</option>
+          <option value="fantasy">Fantasy</option>
+          <option value="scifi">Sci-fi</option>
+          <option value="apoc">Post-apoc</option>
+        </select>
+        <button id="gen" class="primary">Generate</button>
+        <button id="save" title="Add current seed to favorites">Save</button>
+        <button id="prev">Prev</button>
+        <button id="next">Next</button>
+        <button id="copySeed" title="Copy current seed">Copy Seed</button>
+        <button id="copyOut" title="Copy output text">Copy Output</button>
+        <button id="share" title="Update URL with current seed/theme">
+          Share
+        </button>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <div class="pane">
+        <pre id="out"></pre>
+        <span class="mapwrap">
+          <pre id="map"></pre>
+          <span class="pill seedpill small">
+            Seed:
+            <strong id="seedShow">—</strong>
+          </span>
+        </span>
+      </div>
+
+      <div class="hidden">
+        <div class="head">
+          <strong>History</strong><span class="small mut">(latest 5)</span>
+        </div>
+        <div id="histWrap">
+          <ul id="hist" class="list"></ul>
+        </div>
+        <div class="sep"></div>
+        <div class="head favs">
+          <strong>Favorites</strong
+          ><button id="clrFav" class="pill small">Clear</button>
+        </div>
+        <ul id="favs" class="list"></ul>
+        <div class="sep"></div>
+        <div class="small mut">
+          Tip: press <strong>Enter</strong> in the seed box to use that seed
+          once.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* ====================== Tables (themes) ====================== */
+      const T = {
+        fantasy: {
+          biome: [
+            "tundra",
+            "taiga",
+            "temperate forest",
+            "temperate forest",
+            "steppe",
+            "savanna",
+            "desert",
+            "desert",
+            "jungle",
+            "wetlands",
+            "wetlands",
+            "highlands",
+            "islands",
+            "badlands",
+          ],
+          temp: [
+            "gelid",
+            "frigid",
+            "chill",
+            "mild",
+            "warm",
+            "balmy",
+            "sultry",
+            "searing",
+          ],
+          rain: [
+            "parched",
+            "dry",
+            "breezy",
+            "misty",
+            "drizzled",
+            "rain-washed",
+            "monsoonal",
+            "storm-lashed",
+          ],
+          climateAdj: [
+            "rocky",
+            "dusty",
+            "foggy",
+            "smoky",
+            "cracked",
+            "scarred",
+            "shadowed",
+            "glowing",
+            "pitted",
+            "overgrown",
+            "mossy",
+            "fungal",
+            "boggy",
+            "marshy",
+            "rooted",
+            "thorny",
+            "brambly",
+            "ancient",
+            "veined",
+            "twilight",
+            "starlit",
+            "moonlit",
+            "buried",
+            "forgotten",
+          ],
+          factionsN1: [
+            "Order",
+            "Guild",
+            "Clan",
+            "Court",
+            "Circle",
+            "Syndicate",
+            "Chapter",
+            "Coven",
+            "Brotherhood",
+            "Company",
+            "League",
+            "Consulate",
+            "Caravan",
+            "Enclave",
+            "Assembly",
+            "Dominion",
+            "Conclave",
+            "Pact",
+            "Sect",
+            "Keep",
+            "Banner",
+            "Throng",
+            "Kin",
+            "House",
+            "Hollow",
+            "Sanctum",
+            "Forge",
+            "Crusade",
+            "March",
+            "Host",
+          ],
+          factionsN2: [
+            "of the",
+            "of",
+            "for the",
+            "under",
+            "against the",
+            "beneath the",
+            "among the",
+            "beyond the",
+            "within the",
+            "beside the",
+            "before the",
+            "after the",
+            "toward the",
+            "upon the",
+          ],
+          roles: [
+            "Wardens",
+            "Archivists",
+            "Bonepickers",
+            "Skyfarers",
+            "Prospectors",
+            "Scribes",
+            "Wayfinders",
+            "Stormcallers",
+            "Reclaimers",
+            "Oathkeepers",
+            "Lamplighters",
+            "Seers",
+            "Witchbinders",
+            "Lorehunters",
+            "Pathmakers",
+            "Gravetenders",
+            "Runesmiths",
+            "Beastwalkers",
+            "Spellweavers",
+            "Hearthguard",
+            "Frostborn",
+            "Flamebearers",
+            "Thornwatch",
+            "Miststriders",
+          ],
+          motives: [
+            "guarding",
+            "restoring",
+            "cleansing",
+            "protecting",
+            "mapping",
+            "exploring",
+            "sealing",
+            "unsealing",
+            "harvesting",
+            "reclaiming",
+            "binding",
+            "awakening",
+            "silencing",
+            "tending",
+            "unlocking",
+            "tracking",
+            "defending",
+            "consecrating",
+            "studying",
+            "excavating",
+          ],
+          motiveGlue: [
+            "the only remaining",
+            "a",
+            "an ancient",
+            "a forgotten",
+            "a cursed",
+            "the last",
+            "a sacred",
+            "a sealed",
+            "an abandoned",
+            "a hidden",
+            "a buried",
+            "a ruined",
+            "a lost",
+            "a reclaimed",
+          ],
+          relicAdjectives: [
+            "ancient",
+            "forgotten",
+            "sealed",
+            "cracked",
+            "hallowed",
+            "bound",
+            "runed",
+            "sunken",
+            "twilight",
+            "blood-marked",
+            "iron-bound",
+            "frosted",
+            "echoing",
+            "cursed",
+            "blessed",
+            "hidden",
+            "star-forged",
+            "bone-carved",
+          ],
+          relicNouns: [
+            "tablet",
+            "idol",
+            "scroll",
+            "blade",
+            "mask",
+            "sigil",
+            "key",
+            "horn",
+            "stone",
+            "ring",
+            "crown",
+            "lens",
+            "staff",
+            "seal",
+            "totem",
+            "mirror",
+            "lock",
+            "gem",
+            "vessel",
+            "pendant",
+          ],
+          pois: [
+            "relic line",
+            "forgotten cairn",
+            "ley-thin path",
+            "star-iron vein",
+            "storm cycle",
+            "dune-wyrm pact",
+            "glowmoss field",
+            "floodgate",
+            "hearthhold",
+            "shattered runestone",
+            "cursed grove",
+            "ancestral cairn",
+            "rootbound enclave",
+            "dormant sentinel",
+            "echoing tomb",
+            "emberfield",
+            "sealed vault",
+            "moonshade beast",
+            "sky-bridge",
+            "sunken sanctuary",
+          ],
+          weather: [
+            "light wind",
+            "fine dust in the air",
+            "low thunder",
+            "steady breeze",
+            "scattered clouds",
+            "brief gusts",
+            "thin mist",
+            "dry air",
+            "occasional flashes",
+            "soft rainfall",
+            "distant rumble",
+            "light haze",
+            "static in the air",
+            "drifting ash",
+            "stillness before change",
+            "faint crackling",
+            "settling silt",
+            "air thick with pollen",
+            "cool drafts",
+            "humid stillness",
+          ],
+          hooks: [
+            "an oath was broken",
+            "a relic went missing",
+            "a boundary marker was moved",
+            "the river changed course",
+            "the caravan didn't arrive",
+            "a ward stopped working",
+            "a beast emerged from the quarry",
+            "a gate opened without warning",
+            "a name was removed from the scrolls",
+            "the harvest came early",
+            "the flame marked someone new",
+            "the map was altered",
+            "a rival claimed blood-right",
+            "the tithe caused unrest",
+            "the monolith is sinking faster",
+            "the plants reacted to movement",
+            "a vault was uncovered",
+            "the sky cracked at dawn",
+            "a sigil appeared",
+            "the well ran dry",
+          ],
+          hookMods: [
+            "near the <poi>",
+            "within the biome",
+            "during <weather> conditions",
+            "beneath the <poi>",
+            "around the <poi>",
+            "while passing through the biome",
+            "when the wind shifted to <weather>",
+          ],
+          hookGlue: [
+            "and",
+            "but",
+            "while",
+            "as",
+            "yet",
+            "then",
+            "though",
+            "because",
+            "when",
+            "just as",
+          ],
+        },
+
+        scifi: {
+          biome: [
+            "oceanic world",
+            "barren craters",
+            "lava fields",
+            "arboreal belts",
+            "fungal mats",
+            "erg desert",
+            "ice shelf",
+            "toxic bogs",
+            "megacity sector",
+            "ring habitat",
+            "tidal wetlands",
+          ],
+          temp: [
+            "cryonic",
+            "subzero",
+            "brisk",
+            "temperate",
+            "warm",
+            "tropic",
+            "equatorial",
+            "thermic",
+          ],
+          rain: [
+            "arid",
+            "dry winds",
+            "breezy",
+            "humid",
+            "mist-laden",
+            "rainy",
+            "storm-charged",
+            "ion-saturated",
+          ],
+          climateAdj: [
+            "rocky",
+            "dusty",
+            "foggy",
+            "smoky",
+            "cracked",
+            "scarred",
+            "shadowed",
+            "glowing",
+            "pitted",
+            "overgrown",
+            "synthetic",
+            "alien",
+            "metallic",
+            "magnetic",
+            "gravitic",
+            "orbital",
+            "stellar",
+            "lunar",
+            "tidal",
+            "crystalline",
+            "coralline",
+            "glassy",
+            "mutant",
+            "viral",
+            "sentient",
+            "abandoned",
+            "encrypted",
+            "rifted",
+            "plasmatic",
+          ],
+          factionsN1: [
+            "Consortium",
+            "Syndicate",
+            "Research Cell",
+            "Freeport",
+            "Colonial Office",
+            "Outer Rim Guild",
+            "Scavenger Crew",
+            "Offworld Temple",
+            "AI Collective",
+            "Orbital Chapter",
+            "Relay Cartel",
+            "Trade Assembly",
+            "Quantum Union",
+            "Terraform Bureau",
+            "Signal Corps",
+            "Drift Network",
+            "Cryo Division",
+            "Echo Fleet",
+            "Archive Node",
+            "Security Cluster",
+            "Mining Authority",
+          ],
+          factionsN2: [
+            "of",
+            "for",
+            "operating in",
+            "under",
+            "over",
+            "near",
+            "within",
+            "against",
+            "aligned with",
+            "based in",
+          ],
+          roles: [
+            "Surveyors",
+            "Archivists",
+            "Salvagers",
+            "Datawrights",
+            "Terraformers",
+            "Smugglers",
+            "Peacekeepers",
+            "Prospectors",
+            "Hackers",
+            "Vigil AIs",
+            "Skyfarers",
+            "Signalers",
+            "Cryotechs",
+            "Synthbinders",
+          ],
+          motives: [
+            "guarding",
+            "restoring",
+            "studying",
+            "protecting",
+            "mapping",
+            "exploring",
+            "sealing",
+            "unsealing",
+            "harvesting",
+            "reclaiming",
+            "activating",
+            "decrypting",
+            "tracking",
+            "repairing",
+            "scanning",
+            "hacking",
+            "salvaging",
+            "monitoring",
+            "rebooting",
+          ],
+          motiveGlue: [
+            "the only remaining",
+            "a",
+            "an old",
+            "a sealed",
+            "a forgotten",
+            "a derelict",
+            "a hidden",
+            "an encrypted",
+          ],
+          relicAdjectives: [
+            "encrypted",
+            "forgotten",
+            "sealed",
+            "quantum",
+            "bio-locked",
+            "holographic",
+            "corrupted",
+            "archived",
+          ],
+          relicNouns: [
+            "core",
+            "drive",
+            "node",
+            "key",
+            "vault",
+            "chip",
+            "beacon",
+            "archive",
+            "relay",
+            "protocol",
+          ],
+          pois: [
+            "orbital spine",
+            "seed vault",
+            "phase-burned crater",
+            "maglev trench",
+            "signal relay",
+            "data vault",
+            "drift station",
+          ],
+          weather: [
+            "static rain",
+            "ion flashes",
+            "dust drift",
+            "signal interference",
+            "electrical haze",
+            "solar flare scatter",
+          ],
+          hooks: [
+            "a ghost ping repeated each dusk",
+            "a vault opened for the first time",
+            "a comms blackout spread",
+            "a relay node rebooted unexpectedly",
+            "a drone failed to report",
+            "a beacon activated without command",
+          ],
+          hookMods: [
+            "near the <poi>",
+            "inside the <poi>",
+            "during <weather>",
+            "as <weather> builds",
+            "after <weather> clears",
+          ],
+          hookGlue: [
+            "and",
+            "but",
+            "while",
+            "as",
+            "yet",
+            "then",
+            "though",
+            "because",
+            "even as",
+            "just as",
+          ],
+        },
+
+        apocalypse: {
+          biome: [
+            "ruined city",
+            "wasteland",
+            "overgrowth",
+            "floodplain",
+            "ash desert",
+            "irradiated zone",
+            "salt flats",
+            "scrapyard dunes",
+            "bunker valley",
+            "shattered highlands",
+            "canal maze",
+          ],
+          temp: [
+            "frost-bit",
+            "cold",
+            "cool",
+            "mild",
+            "warm",
+            "hot",
+            "blistering",
+            "oven-hot",
+          ],
+          rain: [
+            "powder-dry",
+            "dry gusts",
+            "dusty",
+            "clammy",
+            "drizzle",
+            "rain-battered",
+            "monsoon-bent",
+            "electric storms",
+          ],
+          climateAdj: [
+            "rocky",
+            "dusty",
+            "foggy",
+            "smoky",
+            "cracked",
+            "scarred",
+            "shadowed",
+            "glowing",
+            "pitted",
+            "overgrown",
+            "sooty",
+            "ashen",
+            "shattered",
+            "rusted",
+            "abandoned",
+            "buried",
+            "sealed",
+            "forgotten",
+            "viral",
+            "mutant",
+            "slimed",
+            "broken",
+            "ruined",
+            "hollow",
+          ],
+          factionsN1: [
+            "Remnants",
+            "Road Kings",
+            "Canal Commune",
+            "Vault Kin",
+            "Scrap Choir",
+            "Spore Ward",
+            "Signal House",
+          ],
+          factionsN2: [
+            "of",
+            "at",
+            "over",
+            "under",
+            "through",
+            "against",
+            "within",
+            "near",
+            "beyond",
+            "inside",
+            "along",
+            "beneath",
+          ],
+          roles: [
+            "Scavvers",
+            "Archivists",
+            "Pickers",
+            "Claimants",
+            "Watchers",
+            "Riggers",
+            "Spanners",
+            "Guides",
+            "Slingers",
+          ],
+          motives: [
+            "guarding",
+            "claiming",
+            "mining",
+            "fighting",
+            "hoarding",
+            "charting",
+            "towing",
+            "sealing",
+            "trading",
+            "repairing",
+          ],
+          motiveGlue: [
+            "the only remaining",
+            "a",
+            "an old",
+            "a sealed",
+            "a flooded",
+            "a broken",
+            "a buried",
+            "a rusted",
+            "a forgotten",
+          ],
+          relicAdjectives: [
+            "sealed",
+            "rusted",
+            "burned",
+            "coded",
+            "scrapped",
+            "buried",
+            "cracked",
+            "patched",
+            "irradiated",
+            "forgotten",
+          ],
+          relicNouns: [
+            "vault",
+            "badge",
+            "drive",
+            "mask",
+            "chip",
+            "tag",
+            "key",
+            "module",
+            "canister",
+            "token",
+            "seal",
+            "crate",
+          ],
+          pois: [
+            "interchange",
+            "metro mouth",
+            "signal tower",
+            "mall",
+            "canal gate",
+            "rail cathedral",
+            "salt pit",
+            "water plant",
+          ],
+          weather: [
+            "static rain",
+            "brown snow",
+            "heat shimmer",
+            "metallic drizzle",
+            "smoke squalls",
+            "acid mist",
+            "radio interference",
+          ],
+          hooks: [
+            "a treaty flag burned",
+            "a convoy went missing",
+            "a bunker door opened on its own",
+            "a warning light blinked without power",
+            "a flare went up with no claim",
+          ],
+          hookMods: [
+            "near the <poi>",
+            "inside the <poi>",
+            "during <weather>",
+            "as <weather> builds",
+            "after <weather> clears",
+          ],
+          hookGlue: [
+            "and",
+            "but",
+            "while",
+            "as",
+            "yet",
+            "then",
+            "though",
+            "because",
+            "even as",
+            "just as",
+          ],
+        },
+      };
+
+      const SYL = [
+        "al",
+        "ur",
+        "da",
+        "ri",
+        "ka",
+        "lem",
+        "vor",
+        "zan",
+        "ti",
+        "sha",
+        "mor",
+        "bel",
+        "oth",
+        "ryn",
+        "ser",
+        "vak",
+        "nel",
+        "ios",
+        "qar",
+        "ume",
+        "thal",
+        "gre",
+        "nor",
+        "fen",
+        "zir",
+        "una",
+        "vek",
+        "cal",
+        "mar",
+        "ros",
+        "ion",
+        "kha",
+        "zul",
+        "ora",
+        "sta",
+        "dra",
+        "pha",
+      ];
+
+      const namePost = [
+        " Hold",
+        " Castle",
+        " Reach",
+        " Fall",
+        " Falls",
+        " Gate",
+        " Prime",
+        " Camp",
+        " Cliffs",
+        " Fold",
+        " Crown",
+        " Wilds",
+        " Hollow",
+        " Vale",
+        " Peaks",
+        " Grove",
+        " Keep",
+        " Commune",
+        " Verge",
+        " Wastes",
+        " Spire",
+        " Fields",
+        " Flats",
+        " Basin",
+        " Spine",
+        " Fault",
+        " Deep",
+        " Steppe",
+        " Maw",
+        " Province",
+      ];
+
+      /* ====================== Tileset (WATER=DEPTH) ====================== */
+      const tileset = {
+        water: {
+          depthGlyphs: { 1: "~", 2: "≈", 3: "≋" },
+          color: "#1666c7",
+        },
+        plains: { tile: "·", variants: ["‧", "∙"], color: "#768f35" },
+        grass: {
+          tile: "ᵞ",
+          variants: ["ʸ", "ᵞ", "˯", "ˬ", "ˇ", "…", "ⵈ", "„"],
+          color: "#328a1c",
+        },
+        forest: {
+          tile: "↟",
+          variants: ["𐙘", "↑", "⏃", "𐌒", "Ọ", "𐙢", "𐊾", "🠝", "⯭"],
+          color: "#00bb4e",
+        },
+        mountain: {
+          tile: "^",
+          variants: ["˄", "Λ", "∧", "𐘠", "⌃", "ᨈ"],
+          color: "#95a9bd",
+        },
+        settlement: {
+          tile: "⛩",
+          variants: ["⌂", "𐘮", "𐙁", "𐛅", "𐛘", "𐝡", "𐀁", "𐁍", "𐂧", "𐃀"],
+          color: "#da15b6",
+        },
+      };
+
+      /* ====================== Deterministic Core ====================== */
+      function h32(s) {
+        let h = 5381 >>> 0;
+        for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+        return h >>> 0;
+      }
+
+      function xs32(seed) {
+        let x = seed >>> 0;
+        return () => {
+          x ^= x << 13;
+          x ^= x >>> 17;
+          x ^= x << 5;
+          return (x >>> 0) / 4294967296;
+        };
+      }
+
+      function n2(seed, x, y) {
+        let v = (seed ^ ((x * 374761393) | 0) ^ ((y * 668265263) | 0)) >>> 0;
+        v ^= v >>> 13;
+        v = Math.imul(v, 1274126177) >>> 0;
+        v ^= v >>> 16;
+        return (v >>> 0) / 4294967296;
+      }
+
+      function randSeed() {
+        const a = new Uint32Array(1);
+        if (crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+        else a[0] = (Math.random() * 4294967296) >>> 0;
+        return a[0].toString(36);
+      }
+
+      function nameGen(r) {
+        const n = 2 + (r() > 0.7);
+        let s = "";
+        for (let i = 0; i < n; i++) s += SYL[(r() * SYL.length) | 0];
+        if (r() > 0.5) s += namePost[(r() * namePost.length) | 0];
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      }
+
+      function oneOf(r, arr) {
+        return arr[(r() * arr.length) | 0];
+      }
+      function maybe(rng, chance = 0.5) {
+        return typeof rng === "function" ? rng() < chance : Math.random() < chance;
+      }
+
+      /* ====================== Faction naming (fixed deterministic lexicon) ====================== */
+      const DEFAULT_COLLECTIVES = [
+        "Order",
+        "Guild",
+        "Clan",
+        "Court",
+        "Circle",
+        "Syndicate",
+        "Chapter",
+        "Coven",
+        "Brotherhood",
+        "Company",
+        "League",
+        "Consulate",
+        "Caravan",
+        "Enclave",
+        "Assembly",
+        "Dominion",
+        "Conclave",
+        "Pact",
+        "Sect",
+        "Keep",
+        "Banner",
+        "Kin",
+        "House",
+        "Hollow",
+        "Sanctum",
+        "Forge",
+        "Crusade",
+        "March",
+        "Host",
+      ];
+      const DEFAULT_ROLES = [
+        "Wardens",
+        "Archivists",
+        "Bonepickers",
+        "Skyfarers",
+        "Prospectors",
+        "Scribes",
+        "Wayfinders",
+        "Stormcallers",
+        "Reclaimers",
+        "Oathkeepers",
+        "Lamplighters",
+        "Seers",
+        "Witchbinders",
+        "Lorehunters",
+        "Pathmakers",
+        "Gravetenders",
+        "Runesmiths",
+        "Beastwalkers",
+        "Spellweavers",
+        "Hearthguard",
+        "Frostborn",
+        "Flamebearers",
+        "Thornwatch",
+        "Miststriders",
+      ];
+      
+
+      function ensure(arr, fallback) {
+        return Array.isArray(arr) && arr.length ? arr : fallback;
+      }
+
+      function uniqN(n, fn) {
+        const out = new Set();
+        let guard = 0;
+        while (out.size < n && guard++ < n * 20) out.add(fn());
+        return Array.from(out);
+      }
+
+      function cartesian(a, b) {
+        const out = [];
+        for (let i = 0; i < a.length; i++)
+          for (let j = 0; j < b.length; j++) out.push([a[i], b[j]]);
+        return out;
+      }
+
+      function pickWeighted(r, items) {
+        const sum = items.reduce((acc, it) => acc + (it.weight || 1), 0);
+        const roll = r() * sum;
+        let acc = 0;
+        for (const it of items) {
+          acc += it.weight || 1;
+          if (roll < acc) return it;
+        }
+        return items[items.length - 1];
+      }
+
+      function buildLineages(r, count = 12) {
+        const roots = [
+          "Var",
+          "Tor",
+          "Ash",
+          "Hale",
+          "Brenn",
+          "Keth",
+          "Mor",
+          "Vale",
+          "Dun",
+          "Rav",
+          "Fen",
+          "Grey",
+          "Orv",
+          "Nyx",
+          "Cal",
+        ];
+        const suf = ["yn", "ell", "ath", "ek", "ar", "os", "en", "ard", "ir", "an", "oth", "ic", "as"];
+        return uniqN(count, () => roots[(r() * roots.length) | 0] + suf[(r() * suf.length) | 0]);
+      }
+
+      function buildToponyms(r, count = 20) {
+        const roots = [
+          "Ash",
+          "Red",
+          "Thorn",
+          "Hollow",
+          "River",
+          "Stone",
+          "Mist",
+          "Oak",
+          "Wolf",
+          "Raven",
+          "Sun",
+          "Star",
+          "Ember",
+          "Frost",
+          "Gold",
+          "Mire",
+          "Holt",
+          "Rev",
+          "Shale",
+          "Writ",
+        ];
+        const suf = [
+          "mere",
+          "holt",
+          "gate",
+          "brig",
+          "brook",
+          "field",
+          "wood",
+          "keep",
+          "bridge",
+          "ward",
+          "reach",
+          "shire",
+          "watch",
+          "march",
+          "moor",
+          "ford",
+          "fell",
+          "crest",
+          "vale",
+          "dell",
+          "dale",
+          "fen",
+          "scythe",
+          "glen",
+          "ryn",
+        ];
+        return uniqN(count, () => roots[(r() * roots.length) | 0] + suf[(r() * suf.length) | 0]);
+      }
+
+      function buildRegionsFromToponyms(r, tops, count = 10, regionizer_chance = 0.5) {
+        const regionizers = ["Low", "Upper", "High", "Outer", "Far", "Near", "Old", "New"];
+        const plurals = ["Marches", "Hills", "Wolds", "Moors", "Flats", "Wastes", "Reaches", "Wards", "Downs"];
+        return uniqN(count, () => {
+          const top = tops[(r() * tops.length) | 0];
+          const addRegionizer = r() < regionizer_chance;
+          const addPlural = r() < 0.4;
+          const rr = regionizers[(r() * regionizers.length) | 0];
+          const prefix = addRegionizer ? rr + " " : "";
+          if (addPlural) {
+            const p = plurals[(r() * plurals.length) | 0];
+            return `${prefix}${top} ${p}`;
+          }
+          return `${prefix}${top}`;
+        });
+      }
+
+      function buildNicknames(r) {
+        const colors = ["Black", "Red", "Grey", "White", "Gold", "Green", "Blue", "Umber", "Sable", "Crimson"];
+        const things = ["Thorn", "Hand", "Lantern", "Crow", "Hound", "Spear", "Moth", "Mason", "Key", "Hammer"];
+        return cartesian(colors, things).map(([c, t]) => `${c} ${t}${maybe(r, 0.5) ? "s" : ""}`);
+      }
+
+      const TEMPLATES = [
+        { name: "Title+Lineage", weight: 12, build: (r, L) => `${oneOf(r, L.titles)} ${oneOf(r, L.lineages)}` },
+        { name: "Title+Toponym", weight: 6, build: (r, L) => `${oneOf(r, L.titles)} ${oneOf(r, L.toponyms)}` },
+        { name: "The+Collective+of+Role", weight: 16, build: (r, L) => `The ${oneOf(r, L.collectives)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.roles)}` },
+        { name: "Role+of+Toponym", weight: 14, build: (r, L) => `${oneOf(r, L.roles)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.toponyms)}` },
+        { name: "The+Collective+of+Toponym", weight: 12, build: (r, L) => `The ${oneOf(r, L.collectives)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.toponyms)}` },
+        { name: "Abstract+of+Region", weight: 10, build: (r, L) => `${oneOf(r, L.abstracts)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.regions)}` },
+        { name: "Toponym+Company", weight: 8, build: (r, L) => `${oneOf(r, L.toponyms)} ${oneOf(r, L.tradeBodies)}` },
+        { name: "The+Nickname", weight: 7, build: (r, L) => `The ${oneOf(r, L.nicknames)}` },
+        { name: "Hybrid", weight: 9, build: (r, L) => `${oneOf(r, L.titles)} ${oneOf(r, L.lineages)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.toponyms)}` },
+        { name: "Role+Preposition+Site", weight: 6, build: (r, L) => `${oneOf(r, L.roles)} ${oneOf(r, L.prepsSite)} ${oneOf(r, L.sites)}` },
+      ];
+
+      function buildLexicon(tt, r) {
+        const roles = ensure(tt.roles, DEFAULT_ROLES);
+        const collectives = ensure(tt.factionsN1, DEFAULT_COLLECTIVES);
+
+        const prepsOf = ["of", "of the"];
+        const prepsSite = ["at", "under", "within", "beside", "along", "near"];
+
+        const abstracts = ["Pact", "Dominion", "March", "Compact", "Confederacy", "Concord", "Mandate", "League", "Charter"];
+        const tradeBodies = ["Company", "Charter", "Shipping", "Freight", "Exchange", "Syndicate", "Cartage"];
+        const titles = ["House", "Clan", "Order", "Circle", "Court", "Conclave", "Banner", "Keep", "Forge", "Sanctum", "Host"];
+
+        const lineages = buildLineages(r, 12);
+        const toponyms = buildToponyms(r, 20);
+        const regions = buildRegionsFromToponyms(r, toponyms, 10);
+        const nicknames = buildNicknames(r);
+
+        const sitesBase = ["Gate", "Bridge", "Wayhouse", "Watch", "Spire", "Hollow", "Vault", "Crossing", "Ford", "Hall", "Tower", "Works"];
+        const sites = sitesBase.map((s) => (maybe(r, 0.5) ? `the ${s}` : s));
+
+        return { roles, collectives, prepsOf, prepsSite, abstracts, tradeBodies, titles, lineages, toponyms, regions, nicknames, sites };
+      }
+
+      function factionName(r, theme = "fantasy") {
+        const tt = T[theme] || {};
+        const L = buildLexicon(tt, r);
+        const template = pickWeighted(r, TEMPLATES);
+        return template.build(r, L);
+      }
+
+      /* ====================== World/Text ↔ Map Consistency Helpers ====================== */
+      function escAttr(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function escHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function escRe(s) {
+        return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+
+      function xref(cell, label) {
+        return `<span class="xref" data-cell="${escAttr(cell)}">${escHtml(label)}</span>`;
+      }
+
+      function shuffleDet(r, arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = (r() * (i + 1)) | 0;
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      function namedPOI(r, poiType) {
+        const style = (r() * 4) | 0;
+        const base = nameGen(r);
+        if (style === 0) return `${base} ${poiType}`;
+        if (style === 1) return `The ${poiType} of ${base}`;
+        if (style === 2) return `${poiType.charAt(0).toUpperCase() + poiType.slice(1)} at ${base}`;
+        return `${base}'s ${poiType}`;
+      }
+
+      function buildSettlementNames(r, count) {
+        return uniqN(count, () => nameGen(r));
+      }
+
+      function placeWorldRefs(seedU32, theme, tileKeyGrid, N, poiTypes, factions, rText) {
+        const r = xs32(seedU32 ^ 0xa53c9e17);
+
+        const settlements = [];
+        const land = [];
+
+        for (let y = 0; y < N; y++) {
+          for (let x = 0; x < N; x++) {
+            const k = tileKeyGrid[y][x];
+            const key = `${x},${y}`;
+            if (k !== "water") land.push(key);
+            if (k === "settlement") settlements.push(key);
+          }
+        }
+
+        const settlementOrder = shuffleDet(r, settlements);
+        const landOrder = shuffleDet(r, land);
+
+        const settlementNames = buildSettlementNames(rText, Math.max(6, settlements.length));
+        const settlementNameByCell = new Map();
+        settlements.forEach((cell, i) => settlementNameByCell.set(cell, settlementNames[i % settlementNames.length]));
+
+        const poiPlacements = [];
+        for (let i = 0; i < poiTypes.length; i++) {
+          const poiType = poiTypes[i];
+          const poiName = namedPOI(rText, poiType);
+
+          const cell =
+            settlementOrder[i] ||
+            landOrder[i] ||
+            `${(seedU32 % N) | 0},${((seedU32 >>> 8) % N) | 0}`;
+
+          poiPlacements.push({ poiType, poiName, cell });
+        }
+
+        const used = new Set(poiPlacements.map((p) => p.cell));
+        const factionPlacements = [];
+
+        let sIdx = poiTypes.length;
+        let lIdx = poiTypes.length;
+
+        for (let i = 0; i < factions.length; i++) {
+          let cell = null;
+
+          while (sIdx < settlementOrder.length && used.has(settlementOrder[sIdx])) sIdx++;
+          if (sIdx < settlementOrder.length) cell = settlementOrder[sIdx++];
+
+          if (!cell) {
+            while (lIdx < landOrder.length && used.has(landOrder[lIdx])) lIdx++;
+            cell = landOrder[lIdx++] || landOrder[0] || `${i % N},${(i * 7) % N}`;
+          }
+
+          used.add(cell);
+          factionPlacements.push({
+            factionName: factions[i].name,
+            motive: factions[i].motive,
+            cell,
+          });
+        }
+
+        const ann = new Map();
+        function ensureCell(cell) {
+          if (!ann.has(cell)) ann.set(cell, { poi: [], factions: [] });
+          return ann.get(cell);
+        }
+
+        for (const cell of settlements) {
+          const o = ensureCell(cell);
+          o.settlementName = settlementNameByCell.get(cell);
+        }
+
+        for (const p of poiPlacements) {
+          const o = ensureCell(p.cell);
+          o.poi.push({ name: p.poiName, type: p.poiType });
+        }
+
+        for (const f of factionPlacements) {
+          const o = ensureCell(f.cell);
+          o.factions.push({ name: f.factionName });
+        }
+
+        return { annotations: ann, poiPlacements, factionPlacements, settlementNameByCell };
+      }
+
+      /* ====================== ASCII Map ====================== */
+      function tileWeightsForBiome(biome) {
+        const baseWeights = {
+          water: 0.12,
+          mountain: 0.15,
+          forest: 0.25,
+          grass: 0.2,
+          plains: 0.28,
+        };
+        const inc = (k, f) => (baseWeights[k] = Math.max(0.01, baseWeights[k] * f));
+        const s = biome.toLowerCase();
+
+        if (s.includes("desert") || s.includes("erg") || s.includes("salt")) {
+          inc("plains", 2.2);
+          inc("forest", 0.5);
+          inc("grass", 0.6);
+          inc("water", 0.4);
+          inc("mountain", 0.7);
+        }
+        if (s.includes("jungle") || s.includes("arboreal") || s.includes("overgrowth") || s.includes("fungal")) {
+          inc("forest", 1.9);
+          inc("grass", 1.4);
+          inc("plains", 0.7);
+          inc("water", 1.2);
+          inc("mountain", 0.8);
+        }
+        if (s.includes("wetland") || s.includes("bog") || s.includes("flood") || s.includes("canal")) {
+          inc("water", 2.2);
+          inc("grass", 1.5);
+          inc("forest", 1.2);
+          inc("plains", 0.7);
+        }
+        if (s.includes("island") || s.includes("oceanic") || s.includes("tidal") || s.includes("ring habitat")) {
+          inc("water", 2.4);
+          inc("forest", 0.9);
+          inc("grass", 0.9);
+          inc("plains", 0.7);
+          inc("mountain", 0.6);
+        }
+        if (s.includes("highland") || s.includes("mount") || s.includes("shattered")) {
+          inc("mountain", 2.0);
+          inc("plains", 1.2);
+          inc("forest", 0.9);
+          inc("grass", 0.9);
+        }
+        if (s.includes("barren") || s.includes("ruin") || s.includes("wasteland") || s.includes("megacity") || s.includes("scrapyard")) {
+          inc("plains", 1.6);
+          inc("forest", 0.8);
+          inc("grass", 0.7);
+          inc("mountain", 1.1);
+          inc("water", 0.9);
+        }
+
+        const total = Object.values(baseWeights).reduce((a, b) => a + b, 0);
+        for (const k in baseWeights) baseWeights[k] /= total;
+        return baseWeights;
+      }
+
+      function pickByWeights(x, weights) {
+        const keys = Object.keys(weights);
+        let acc = 0;
+        for (let i = 0; i < keys.length; i++) {
+          const k = keys[i];
+          acc += weights[k];
+          if (x <= acc) return k;
+        }
+        return keys[keys.length - 1];
+      }
+
+      function pickVariant(tileKey, tileset, seed) {
+        const variants = [tileset[tileKey].tile, ...(tileset[tileKey].variants || [])];
+        const index = Math.floor(seed * variants.length);
+        return variants[index];
+      }
+
+      function riverCells(seedU32, N) {
+        const cells = new Set();
+        let x = (seedU32 % N) | 0;
+        for (let y = 0; y < N; y++) {
+          const drift = n2(seedU32, 9000 + y, 9100 + y);
+          if (drift < 0.33) x = Math.max(0, x - 1);
+          else if (drift > 0.66) x = Math.min(N - 1, x + 1);
+          cells.add(`${x},${y}`);
+          if (x > 0) cells.add(`${x - 1},${y}`);
+          if (x < N - 1) cells.add(`${x + 1},${y}`);
+        }
+        return cells;
+      }
+
+      /* ====================== WATER DEPTH ====================== */
+      function clamp(v, lo, hi) {
+        return Math.max(lo, Math.min(hi, v));
+      }
+
+      function waterGlyph(depth) {
+        return tileset.water.depthGlyphs[depth] || tileset.water.depthGlyphs[1] || "~";
+      }
+
+      function neighbors4(N, x, y) {
+        const out = [];
+        if (y > 0) out.push([x, y - 1]);
+        if (x < N - 1) out.push([x + 1, y]);
+        if (y < N - 1) out.push([x, y + 1]);
+        if (x > 0) out.push([x - 1, y]);
+        return out;
+      }
+
+      function countWaterNeighbors4(tileKeyGrid, N, x, y) {
+        const neigh = neighbors4(N, x, y);
+        let c = 0;
+        for (const [nx, ny] of neigh) if (tileKeyGrid[ny][nx] === "water") c++;
+        return c;
+      }
+
+      function neighbors8(N, x, y) {
+        const out = [];
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx,
+              ny = y + dy;
+            if (nx >= 0 && ny >= 0 && nx < N && ny < N) out.push([nx, ny]);
+          }
+        }
+        return out;
+      }
+
+      function cleanupIsolatedWater(seedU32, tileKeyGrid, weights, N) {
+        const next = tileKeyGrid.map((row) => row.slice());
+        for (let y = 0; y < N; y++) {
+          for (let x = 0; x < N; x++) {
+            if (tileKeyGrid[y][x] !== "water") continue;
+            if (countWaterNeighbors4(tileKeyGrid, N, x, y) !== 0) continue;
+
+            const cand = new Map();
+            for (const [nx, ny] of neighbors4(N, x, y)) {
+              const k = tileKeyGrid[ny][nx];
+              if (!k || k === "water" || k === "settlement") continue;
+              cand.set(k, (cand.get(k) || 0) + 1);
+            }
+
+            let replacement = null;
+
+            if (cand.size) {
+              const entries = Array.from(cand.entries());
+              entries.sort((a, b) => b[1] - a[1]);
+              const topCount = entries[0][1];
+              const tied = entries.filter((e) => e[1] === topCount).map((e) => e[0]);
+              if (tied.length === 1) replacement = tied[0];
+              else {
+                const roll = n2(seedU32, 19000 + x, 19100 + y);
+                replacement = tied[Math.floor(roll * tied.length)];
+              }
+            } else {
+              const roll = n2(seedU32, 19200 + x, 19300 + y);
+              const w2 = { ...weights };
+              delete w2.water;
+              delete w2.settlement;
+              const total = Object.values(w2).reduce((a, b) => a + b, 0) || 1;
+              for (const k in w2) w2[k] /= total;
+              replacement = pickByWeights(roll, w2);
+            }
+
+            next[y][x] = replacement || "plains";
+          }
+        }
+        return next;
+      }
+
+      function baseWaterDepth(seedU32, x, y, isRiver) {
+        const a = n2(seedU32, 15000 + x, 15100 + y);
+        let d;
+        if (a < 0.6) d = 1;
+        else if (a < 0.92) d = 2;
+        else d = 3;
+
+        if (isRiver) {
+          const b = n2(seedU32, 15200 + x, 15300 + y);
+          d = b < 0.78 ? 2 : 3;
+        }
+        return clamp(d, 1, 3);
+      }
+
+      function promoteDepths(seedU32, tileKeyGrid, depthGrid, N) {
+        const minWaterNeighbors = { 1: 5, 2: 6 };
+        const minSame = { 1: 5, 2: 6 };
+        const baseChance = { 1: 0.1, 2: 0.05 };
+        const stepChance = { 1: 0.08, 2: 0.06 };
+        const maxChance = { 1: 0.45, 2: 0.22 };
+        const ROUNDS = 1;
+
+        let cur = depthGrid.map((row) => row.slice());
+
+        for (let round = 0; round < ROUNDS; round++) {
+          for (let L = 1; L <= 2; L++) {
+            const snap = cur.map((row) => row.slice());
+            const next = cur.map((row) => row.slice());
+
+            for (let y = 0; y < N; y++) {
+              for (let x = 0; x < N; x++) {
+                if (tileKeyGrid[y][x] !== "water") continue;
+                if (snap[y][x] !== L) continue;
+
+                const neigh = neighbors8(N, x, y);
+                let cWater = 0;
+                let cSame = 0;
+
+                for (const [nx, ny] of neigh) {
+                  if (tileKeyGrid[ny][nx] === "water") {
+                    cWater++;
+                    if (snap[ny][nx] === L) cSame++;
+                  }
+                }
+
+                if (cWater < minWaterNeighbors[L]) continue;
+                if (cSame < minSame[L]) continue;
+
+                const chance = clamp(
+                  baseChance[L] + (cSame - minSame[L]) * stepChance[L],
+                  0,
+                  maxChance[L]
+                );
+
+                const roll = n2(
+                  seedU32,
+                  16000 + L * 1000 + round * 200 + x,
+                  16100 + L * 1000 + round * 200 + y
+                );
+
+                if (roll < chance) next[y][x] = L + 1;
+              }
+            }
+
+            cur = next;
+          }
+        }
+
+        for (let y = 0; y < N; y++) {
+          for (let x = 0; x < N; x++) {
+            if (tileKeyGrid[y][x] === "water") cur[y][x] = clamp(cur[y][x] || 1, 1, 3);
+            else cur[y][x] = 0;
+          }
+        }
+
+        return cur;
+      }
+
+      function genMap(seedU32, biome, tileset, worldMeta = null) {
+        const N = 25;
+        const weights = tileWeightsForBiome(biome);
+        const river = riverCells(seedU32 ^ 0x9e3779b9, N);
+
+        let tileKeyGrid = Array.from({ length: N }, () => Array(N).fill("plains"));
+
+        for (let y = 0; y < N; y++) {
+          for (let x = 0; x < N; x++) {
+            let tileKey;
+            if (river.has(`${x},${y}`)) {
+              tileKey = "water";
+            } else {
+              const r0 = n2(seedU32, x, y);
+              tileKey = pickByWeights(r0, weights);
+              if (tileKey !== "water" && n2(seedU32, 7000 + x, 8000 + y) > 0.985) tileKey = "settlement";
+            }
+            tileKeyGrid[y][x] = tileKey;
+          }
+        }
+
+        tileKeyGrid = cleanupIsolatedWater(seedU32, tileKeyGrid, weights, N);
+
+        let depthGrid = Array.from({ length: N }, () => Array(N).fill(0));
+        for (let y = 0; y < N; y++) {
+          for (let x = 0; x < N; x++) {
+            if (tileKeyGrid[y][x] !== "water") continue;
+            depthGrid[y][x] = baseWaterDepth(seedU32, x, y, river.has(`${x},${y}`));
+          }
+        }
+
+        depthGrid = promoteDepths(seedU32, tileKeyGrid, depthGrid, N);
+
+        const ann = worldMeta?.annotations || new Map();
+
+        let s = "";
+        for (let y = 0; y < N; y++) {
+          let row = "";
+          for (let x = 0; x < N; x++) {
+            const tileKey = tileKeyGrid[y][x];
+            const key = `${x},${y}`;
+            const a = ann.get(key);
+
+            const bits = [];
+            bits.push(`${tileKey} @ (${x},${y})`);
+
+            if (tileKey === "water") {
+              const d = clamp(depthGrid[y][x] || 1, 1, 3);
+              bits.push(`depth: ${d}`);
+            }
+
+            if (a?.settlementName) bits.push(`Settlement: ${a.settlementName}`);
+            if (a?.poi?.length) for (const p of a.poi) bits.push(`POI: ${p.name} [${p.type}]`);
+            if (a?.factions?.length) for (const f of a.factions) bits.push(`Faction: ${f.name}`);
+
+            const title = escAttr(bits.join("\n"));
+
+            if (tileKey === "water") {
+              const d = clamp(depthGrid[y][x] || 1, 1, 3);
+              const ch = waterGlyph(d);
+              row += `<span data-cell="${x},${y}" data-tile="water" data-depth="${d}" title="${title}">${ch}</span>`;
+            } else {
+              const variantSeed = n2(seedU32, x + 999, y + 999);
+              const ch = pickVariant(tileKey, tileset, variantSeed);
+              row += `<span data-cell="${x},${y}" data-tile="${tileKey}" title="${title}">${ch}</span>`;
+            }
+          }
+          s += row + (y < N - 1 ? "\n" : "");
+        }
+
+        return { html: s, tileKeyGrid, depthGrid, N };
+      }
+
+      /* ====================== Slice Builder ====================== */
+      function coord(r) {
+        const lat = (r() * 160 - 80).toFixed(2),
+          lon = (r() * 360 - 180).toFixed(2);
+        const NS = lat >= 0 ? "N" : "S",
+          EW = lon >= 0 ? "E" : "W";
+        return `${Math.abs(lat)}° ${NS}, ${Math.abs(lon)}° ${EW}`;
+      }
+
+      function resolvePlaceholders(s, ctx) {
+        return s
+          .replace(/<poi>/g, () => ctx.poi?.() ?? "site")
+          .replace(/<weather>/g, () => ctx.weather?.() ?? "weather");
+      }
+
+      function composeHook(r, tt, ctx = {}) {
+        const h1 = oneOf(r, tt.hooks);
+        const m1 = maybe(r, 0.6) ? resolvePlaceholders(oneOf(r, tt.hookMods), ctx) : null;
+
+        const hasSecond = maybe(r, 0.65);
+        if (!hasSecond) return m1 ? `${h1} ${m1}.` : `${h1}.`;
+
+        const glue = oneOf(r, tt.hookGlue);
+        const h2 = oneOf(r, tt.hooks);
+        const m2 = maybe(r, 0.6) ? resolvePlaceholders(oneOf(r, tt.hookMods), ctx) : null;
+
+        let left = m1 ? `${h1} ${m1}` : h1;
+        const right = m2 ? `${h2} ${m2}` : h2;
+
+        left = left.charAt(0).toUpperCase() + left.slice(1);
+        return `${left}, ${glue} ${right}.`;
+      }
+
+      function composeMotive(r, tt, { adjChance = 0.6, forceAdj = false, normalizeSpacing = true } = {}) {
+        const motive = oneOf(r, tt.motives);
+        const glue = oneOf(r, tt.motiveGlue);
+        const includeAdj = forceAdj || maybe(r, adjChance);
+        const adj = includeAdj ? oneOf(r, tt.relicAdjectives) : null;
+        const noun = oneOf(r, tt.relicNouns);
+
+        let line = `${motive} ${glue} ${adj ? adj + " " : ""}${noun}`;
+        if (normalizeSpacing) line = line.replace(/\s{2,}/g, " ").trim();
+        return line;
+      }
+
+      function buildSlice(seedStr, theme) {
+        const base = h32(String(seedStr));
+        const r = xs32(base);
+        const tt = T[theme] || T.fantasy;
+
+        const toponyms = buildToponyms(r, 20);
+        const region = buildRegionsFromToponyms(r, toponyms, 1);
+        const biome = oneOf(r, tt.biome);
+        const temp = oneOf(r, tt.temp);
+        const rain = oneOf(r, tt.rain);
+        const climA = oneOf(r, tt.climateAdj);
+        const coords = coord(r);
+
+        const fCount = 1 + ((r() * 3) | 0);
+        const pCount = 2 + ((r() * 3) | 0);
+
+        const factions = [];
+        for (let i = 0; i < fCount; i++) {
+          const motive = composeMotive(r, tt);
+          const name = factionName(r, theme);
+          factions.push({ name, motive });
+        }
+
+        const poiTypes = [];
+        for (let i = 0; i < pCount; i++) poiTypes.push(oneOf(r, tt.pois));
+
+        const weatherNow = oneOf(r, tt.weather);
+
+        const mapSeed = h32(seedStr + "|map|" + theme);
+
+        const map0 = genMap(mapSeed, biome, tileset, null);
+        const worldMeta = placeWorldRefs(mapSeed, theme, map0.tileKeyGrid, map0.N, poiTypes, factions, r);
+        const map1 = genMap(mapSeed, biome, tileset, worldMeta);
+
+        // deterministic hook POI so we can wrap it in output
+        const hookPick = oneOf(r, worldMeta.poiPlacements);
+        const hookPOIName = hookPick ? hookPick.poiName : oneOf(r, tt.pois || ["facility"]);
+        const hookPOICell = hookPick ? hookPick.cell : null;
+
+        const hook = composeHook(r, tt, {
+          poi: () => hookPOIName,
+          weather: () => oneOf(r, tt.weather || ["light wind"]),
+        });
+
+        let hookHtml = escHtml(hook);
+        if (hookPick && hookPOIName) {
+          const re = new RegExp(escRe(hookPOIName));
+          hookHtml = hookHtml.replace(re, xref(hookPOICell, hookPOIName));
+        }
+
+        let html = "";
+        html += `Theme  : ${escHtml(theme)}\n`;
+        html += `Region : ${escHtml(region)}\n`;
+        html += `Biome  : ${escHtml(biome)}\n`;
+        html += `Coords : ${escHtml(coords)}\n`;
+        html += `Climate: ${escHtml(temp)}, ${escHtml(rain)}, ${escHtml(climA)}\n`;
+        html += `Current Weather: ${escHtml(weatherNow)}\n\n`;
+
+        html += `Factions (${factions.length}):\n`;
+        worldMeta.factionPlacements.forEach((fp, i) => {
+          const baseAnn = worldMeta.annotations.get(fp.cell);
+          const baseName = baseAnn?.settlementName ? baseAnn.settlementName : "Field Camp";
+          html += `  ${i + 1}. ${xref(fp.cell, fp.factionName)}\n`;
+          html += `\t- ${escHtml(fp.motive)}\n`;
+          html += `\t- Base: ${xref(fp.cell, baseName)} @ (${escHtml(fp.cell)})\n\n`;
+        });
+
+        html += `Points of Interest (${worldMeta.poiPlacements.length}):\n`;
+        worldMeta.poiPlacements.forEach((p) => {
+          const a = worldMeta.annotations.get(p.cell);
+          const near = a?.settlementName ? ` (near ${xref(p.cell, a.settlementName)})` : "";
+          html += `  - ${xref(p.cell, p.poiName)} [${escHtml(p.poiType)}] @ (${escHtml(p.cell)})${near}\n`;
+        });
+
+        html += `\nHooks: ${hookHtml}\n`;
+
+        return { html, mapGrid: map1.html };
+      }
+
+      /* ====================== State, Storage, UI ====================== */
+      const $ = (sel) => document.querySelector(sel);
+      const out = $("#out"),
+        mapEl = $("#map"),
+        seedIn = $("#seed"),
+        seedShow = $("#seedShow"),
+        themeSel = $("#theme");
+
+      const btnGen = $("#gen"),
+        btnSave = $("#save"),
+        btnPrev = $("#prev"),
+        btnNext = $("#next");
+
+      const btnCopySeed = $("#copySeed"),
+        btnCopyOut = $("#copyOut"),
+        btnShare = $("#share");
+
+      const histList = $("#hist"),
+        favList = $("#favs"),
+        btnClrFav = $("#clrFav");
+
+      const LS_H = "sow_history_v2",
+        LS_F = "sow_faves_v2",
+        MAXH = 5;
+
+      let histArr = [],
+        faves = [],
+        idx = -1,
+        current = "";
+
+      function loadLS() {
+        try {
+          histArr = JSON.parse(localStorage.getItem(LS_H) || "[]");
+          faves = JSON.parse(localStorage.getItem(LS_F) || "[]");
+        } catch (e) {
+          histArr = [];
+          faves = [];
+        }
+      }
+
+      function saveLS() {
+        localStorage.setItem(LS_H, JSON.stringify(histArr.slice(-MAXH)));
+        localStorage.setItem(LS_F, JSON.stringify([...new Set(faves)]));
+      }
+
+      function renderLists() {
+        if (!histList || !favList) return;
+
+        histList.innerHTML = "";
+        const recent = histArr.slice(-MAXH).slice().reverse();
+        recent.forEach((s) => {
+          const li = document.createElement("li");
+          li.textContent = s;
+          li.title = "Load seed";
+          li.onclick = () => {
+            setCurrentSeed(s, true);
+            generate();
+          };
+          histList.appendChild(li);
+        });
+
+        favList.innerHTML = "";
+        faves.forEach((s) => {
+          const li = document.createElement("li");
+          li.textContent = s;
+          li.title = "Load favorite";
+          li.onclick = () => {
+            setCurrentSeed(s, true);
+            generate();
+          };
+          favList.appendChild(li);
+        });
+      }
+
+      function pushHistory(s) {
+        if (!s) return;
+        if (histArr.length === 0 || histArr[histArr.length - 1] !== s) histArr.push(s);
+        if (histArr.length > MAXH) histArr = histArr.slice(-MAXH);
+        idx = histArr.length - 1;
+        saveLS();
+        renderLists();
+      }
+
+      function navigate(d) {
+        if (!histArr.length) return;
+        idx = Math.max(0, Math.min(histArr.length - 1, idx + d));
+        setCurrentSeed(histArr[idx], false);
+        generate();
+      }
+
+      function setCurrentSeed(s, push = true) {
+        current = s;
+        seedShow.textContent = s;
+        if (push) pushHistory(s);
+        updateHash();
+      }
+
+      function parseHash() {
+        const h = location.hash.replace(/^#/, "");
+        const params = new URLSearchParams(h.includes("=") ? h : "");
+        const s = params.get("s"),
+          t = params.get("t");
+        return {
+          s: s ? decodeURIComponent(s) : null,
+          t: t ? decodeURIComponent(t) : null,
+        };
+      }
+
+      function updateHash() {
+        if (!current) return;
+        const t = themeSel.value;
+        const h = `s=${encodeURIComponent(current)}&t=${encodeURIComponent(t)}`;
+        if (location.hash !== `#${h}`) window.history.replaceState(null, "", `#${h}`);
+      }
+
+      function resolveTheme(seed, sel) {
+        if (sel !== "rnd") return sel;
+        const keys = Object.keys(T);
+        return keys[h32(seed) % keys.length];
+      }
+
+      function doGenerate() {
+        const typed = seedIn.value.trim();
+        const s = typed || randSeed();
+        setCurrentSeed(s, true);
+        generate();
+      }
+
+      /* ====================== Cross-hover binding ====================== */
+      let _crossHoverBound = false;
+
+      function bindCrossHover() {
+        if (_crossHoverBound) return;
+        _crossHoverBound = true;
+
+        const clearHot = () => {
+          document.querySelectorAll(".is-hot").forEach((el) => el.classList.remove("is-hot"));
+        };
+
+        const markCell = (cell) => {
+          clearHot();
+          if (!cell) return;
+
+          const esc =
+            window.CSS && CSS.escape ? CSS.escape(cell) : cell.replace(/"/g, '\\"');
+
+          mapEl.querySelectorAll(`span[data-cell="${esc}"]`).forEach((el) => el.classList.add("is-hot"));
+          out.querySelectorAll(`.xref[data-cell="${esc}"]`).forEach((el) => el.classList.add("is-hot"));
+        };
+
+        out.addEventListener("pointerover", (e) => {
+          const t = e.target.closest?.(".xref[data-cell]");
+          if (!t) return;
+          markCell(t.dataset.cell);
+        });
+
+        out.addEventListener("pointerout", (e) => {
+          const t = e.target.closest?.(".xref[data-cell]");
+          if (!t) return;
+          const rt = e.relatedTarget;
+          if (rt && rt.closest?.(".xref[data-cell]")) return;
+          clearHot();
+        });
+
+        mapEl.addEventListener("pointerover", (e) => {
+          const t = e.target.closest?.("span[data-cell]");
+          if (!t) return;
+          markCell(t.dataset.cell);
+        });
+
+        mapEl.addEventListener("pointerout", (e) => {
+          const t = e.target.closest?.("span[data-cell]");
+          if (!t) return;
+          const rt = e.relatedTarget;
+          if (rt && rt.closest?.("span[data-cell]")) return;
+          clearHot();
+        });
+      }
+
+      function generate() {
+        if (!current) return;
+        const themeUsed = resolveTheme(current, themeSel.value);
+        const { html, mapGrid } = buildSlice(current, themeUsed);
+        out.innerHTML = html;
+        mapEl.innerHTML = mapGrid;
+        bindCrossHover();
+      }
+
+      function shareURL() {
+        if (!current) return;
+        updateHash();
+      }
+
+      /* ====================== Wire up ====================== */
+      btnGen.onclick = doGenerate;
+      seedIn.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doGenerate();
+      });
+      btnPrev.onclick = () => navigate(-1);
+      btnNext.onclick = () => navigate(1);
+
+      btnSave.onclick = () => {
+        if (!current) return;
+        if (!faves.includes(current)) faves.push(current);
+        saveLS();
+        renderLists();
+      };
+
+      btnCopySeed.onclick = () => {
+        if (current) navigator.clipboard?.writeText(current);
+      };
+
+      btnCopyOut.onclick = () =>
+        navigator.clipboard?.writeText((out.textContent || "") + "\n" + (mapEl.textContent || ""));
+
+      btnShare.onclick = () => shareURL();
+
+      if (btnClrFav) {
+        btnClrFav.onclick = () => {
+          if (!faves.length) return;
+          if (!confirm("Clear all favorites?")) return;
+          faves = [];
+          saveLS();
+          renderLists();
+        };
+      }
+
+      themeSel.onchange = () => {
+        generate();
+        updateHash();
+      };
+
+      window.addEventListener("hashchange", () => {
+        const { s, t } = parseHash();
+        if (t) themeSel.value = t;
+        if (s) {
+          setCurrentSeed(s, true);
+          generate();
+        }
+      });
+
+      (function init() {
+        loadLS();
+        renderLists();
+        const { s, t } = parseHash();
+        if (t) themeSel.value = t;
+
+        if (s) {
+          setCurrentSeed(s, true);
+        } else if (histArr.length) {
+          setCurrentSeed(histArr[histArr.length - 1], false);
+          idx = histArr.length - 1;
+        } else {
+          setCurrentSeed(randSeed(), true);
+        }
+        generate();
+      })();
+    </script>
+  </body>
+</html>
