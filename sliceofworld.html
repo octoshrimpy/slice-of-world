@@ -9,7 +9,7 @@
         src: url("https://stgiga.github.io/UnifontEX/UnifontExMono.ttf");
         font-style: normal;
         font-weight: 400;
-        font-display: swap;
+        font-display: block;
       }
 
       /* ====================== Sweetie16 (ONLY literal colors) ====================== */
@@ -143,9 +143,7 @@
         background: var(--pane2);
         position: relative;
         display: flex;
-      }
-
-      .pane:first-of-type {
+        gap: 1rem;
         flex-grow: 1;
       }
 
@@ -178,7 +176,7 @@
       }
 
       .mapwrap {
-        flex: 1;
+        /* flex: 1; */
         display: flex;
         flex-direction: column;
         align-items: flex-end;
@@ -187,8 +185,6 @@
       /* Larger, square-cell minimap */
       #map {
         margin-top: 8px;
-        font-size: 2.5ch;
-        line-height: 1.25ch;
         overflow: visible;
         cursor: pointer;
       }
@@ -196,8 +192,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 1.75ch;
-        height: 1.75ch;
+        font-size: 1.2rem;
+        width: 1.2rem;
+        height: 1.2rem;
         transition: all 0.15s ease-in-out;
         border-radius: 50%;
       }
@@ -795,6 +792,164 @@
           hookGlue: ["and", "but", "while", "as", "yet", "then", "though", "because", "even as", "just as"],
         },
       };
+            
+      const NPC_TASKS = {
+        faction: [
+          "recruiting new members for a difficult assignment",
+          "screening applicants after a recent breach",
+          "guarding a cache of supplies near <poi>",
+          "guarding a sealed storehouse whose lock has begun to fail",
+          "escorting a courier between safehouses",
+          "escorting a dignitary through contested ground",
+          "training new initiates in protocol and discipline",
+          "drilling a response team for an expected incursion",
+          "auditing relics, records, and inventories for discrepancies",
+          "investigating forged credentials circulating among allies",
+          "negotiating a fragile truce over access to <poi>",
+          "enforcing a disputed boundary marker near <poi>",
+          "recovering a stolen insignia tied to leadership authority",
+          "hunting an infiltrator who knows internal routes",
+          "coordinating a joint operation with an uneasy partner",
+          "planning a raid or recovery mission timed with <weather>",
+          "intercepting contraband moving through the biome",
+          "protecting a witness scheduled to testify at a council",
+          "relocating a vulnerable cell before the next crackdown",
+          "disabling a rival outpost overlooking <poi>",
+          "repairing a failing ward, gate, lock, or access point",
+          "attempting to reactivate a dormant asset at <poi>",
+          "silencing rumors that could fracture the ranks",
+          "delivering an ultimatum to a rival faction",
+          "hosting a tribunal for a member accused of betrayal",
+          "tracking a missing squad last seen near <poi>",
+          "securing a route for a coming convoy",
+          "mapping contacts and loyalties inside a contested district",
+          "recovering a lost map that details hidden approaches",
+          "testing a prototype tool or ritual under field conditions",
+          "containing an outbreak of panic after <weather>",
+          "negotiating trade rights in exchange for protection",
+          "redistributing rations after an unexpected shortage",
+          "guarding a prisoner transfer through hostile ground",
+          "searching for a specialist needed to stabilize <poi>",
+          "tending a wounded leader while rivals circle",
+          "covering up a mistake before it becomes public",
+          "investigating a sabotage incident in the faction's stores",
+          "retrieving a message that must not be read by outsiders",
+          "binding, sealing, or securing a dangerous discovery at <poi>",
+          "monitoring a repeating signal/omen tied to <poi>",
+          "setting a trap for a rival team operating near <poi>",
+          "running security for a clandestine meeting during <weather>",
+          "conducting a census of members and dependents",
+          "escorting a defector who wants asylum",
+          "protecting a critical shipment during <weather>",
+          "investigating why a long-trusted contact went silent",
+          "clearing a safehouse compromised by an unknown contaminant",
+        ],
+
+        settlement: [
+          "repairing the waterworks after <weather>",
+          "patching leaks and reinforcing cisterns ahead of <weather>",
+          "restoring power/heat/light to a key block of homes",
+          "fixing a jammed gate, lift, lock, or access mechanism",
+          "tracking a series of thefts that target essentials",
+          "investigating a break-in at a storeroom near <poi>",
+          "organizing a trade caravan and negotiating safe passage",
+          "preparing a ration exchange with an unreliable partner",
+          "hosting a tense council meeting about <poi>",
+          "mediating a feud that threatens to split the community",
+          "surveying new housing sites away from known hazards",
+          "mapping structural risks in older tunnels/buildings",
+          "investigating a strange illness spreading after <weather>",
+          "quarantining a block and tracing the source to <poi>",
+          "clearing rubble to reopen a route to <poi>",
+          "reinforcing defenses after a warning sign at <poi>",
+          "training volunteers for watch duty and emergency response",
+          "rescuing trapped workers during <weather>",
+          "finding a replacement part/resource the settlement can't do without",
+          "recovering a lost tool kit critical to maintenance",
+          "auditing stores because supplies don't match the ledgers",
+          "running a controlled burn / purge / cleanup of a contaminated zone",
+          "investigating a suspicious fire that started too cleanly",
+          "negotiating a marriage pact / adoption / sponsorship to secure alliances",
+          "settling a land claim dispute over the edge of the biome",
+          "evacuating families after a new hazard appears near <poi>",
+          "escorting a visiting envoy through nervous streets",
+          "hosting a ceremony that must not be interrupted",
+          "burying the dead and appeasing the living after a tragedy",
+          "repairing communications lines after <weather>",
+          "tracking why patrols keep missing check-ins near <poi>",
+          "building a new market route that avoids a dangerous stretch",
+          "shoring up walls and walkways before the next <weather>",
+          "investigating counterfeit tokens, ration chits, or permits",
+          "hunting down a black-market supplier poisoning the town",
+          "organizing a salvage lottery that's turning violent",
+          "recovering a child/elder who wandered toward <poi>",
+          "escorting healers/engineers to a worksite near <poi>",
+          "replacing leadership after a sudden resignation",
+          "investigating a ghost story that's driving people away from <poi>",
+          "securing a festival with rising tensions and hidden weapons",
+          "disarming a booby trap found in a common thoroughfare",
+          "patching a collapsed tunnel/bridge caused by <weather>",
+          "moving the seed stores / archives / reliquary to a safer vault",
+          "interviewing newcomers whose story doesn't add up",
+          "negotiating protection payments under threat",
+          "tracking a predator that hunts livestock near <poi>",
+          "testing a new well/route that may be cursed/unsafe/unstable",
+          "restoring the local map after someone altered it",
+        ],
+
+        world: [
+          "mapping an unmapped trail that skirts <poi>",
+          "charting safe routes as <weather> builds",
+          "guiding travelers through hostile ground to <poi>",
+          "escorting pilgrims, refugees, or traders across the biome",
+          "hunting a dangerous creature seen near <poi>",
+          "tracking something that leaves no prints after <weather>",
+          "recovering a lost expedition last seen near <poi>",
+          "searching for a missing scout who vanished during <weather>",
+          "salvaging a ruined site for usable parts and supplies",
+          "extracting valuable material from a hazardous zone near <poi>",
+          "scouting a rival camp positioned near <poi>",
+          "observing an encroaching force without being detected",
+          "securing a crossing after the terrain shifts near <poi>",
+          "repairing a broken bridge, lift, or passageway at <poi>",
+          "investigating why an old marker no longer matches the land",
+          "following a repeating signal/omen that points toward <poi>",
+          "closing, sealing, or stabilizing a breach at <poi>",
+          "unsealing a site at <poi> under strict precautions",
+          "retrieving a relic/container/data-cache rumored to be in <poi>",
+          "delivering a message through a zone nobody wants to cross",
+          "recovering a downed cart/sled/rig stranded by <weather>",
+          "clearing a path through overgrowth, rubble, or drifted dunes",
+          "setting up a remote observation post overlooking <poi>",
+          "testing whether the water/air/soil is safe beyond the ridge",
+          "tracking a poacher or scavenger crew operating near <poi>",
+          "negotiating passage with a territorial group beyond the border",
+          "discovering why local wildlife avoids <poi>",
+          "finding the source of strange lights/sounds near <poi>",
+          "recovering supplies dropped during a retreat",
+          "investigating an abandoned camp where everything was left behind",
+          "locating a hidden cache mapped only in partial coordinates",
+          "escorting a specialist needed to handle <poi>",
+          "running a diversion to pull attention away from <poi>",
+          "delivering emergency medicine to an isolated outpost",
+          "surveying terrain for a future settlement site",
+          "finding fresh water in a parched stretch of the biome",
+          "tracking the movement of a storm front that behaves wrongly",
+          "recovering a stolen map and identifying who copied it",
+          "investigating a boundary marker that was moved overnight",
+          "following a trail of messages carved/encoded along the route",
+          "retrieving proof of a rival's wrongdoing from <poi>",
+          "rescuing captives taken toward <poi>",
+          "destroying a hazard source without triggering worse consequences",
+          "confirming whether <poi> is truly empty or merely silent",
+          "bringing back a sample/artifact from <poi> without contamination",
+          "finding a safer detour after <weather> makes the main route impassable",
+          "tracking a caravan that never arrived from the direction of <poi>",
+          "retrieving a lost heirloom that may start a war if mishandled",
+          "investigating a new sinkhole/collapse revealed after <weather>",
+        ],
+      };
+
 
       const SYL = ["al", "ur", "da", "ri", "ka", "lem", "vor", "zan", "ti", "sha", "mor", "bel", "oth", "ryn", "ser", "vak", "nel", "ios", "qar", "ume", "thal", "gre", "nor", "fen", "zir", "una", "vek", "cal", "mar", "ros", "ion", "kha", "zul", "ora", "sta", "dra", "pha"];
 
@@ -854,12 +1009,29 @@
         return a[0].toString(36);
       }
 
-      function nameGen(r) {
-        const n = 2 + (r() > 0.7);
-        let s = "";
-        for (let i = 0; i < n; i++) s += SYL[(r() * SYL.length) | 0];
-        if (r() > 0.5) s += namePost[(r() * namePost.length) | 0];
-        return s.charAt(0).toUpperCase() + s.slice(1);
+      class NameGenerator {
+        constructor(rng, { syllables = SYL, postfixes = namePost } = {}) {
+          this.r = rng;
+          this.syllables = syllables;
+          this.postfixes = postfixes;
+        }
+
+        baseName({ allowExtraSyllable = true } = {}) {
+          const n = 2 + (allowExtraSyllable && this.r() > 0.7);
+          let s = "";
+          for (let i = 0; i < n; i++) s += this.syllables[(this.r() * this.syllables.length) | 0];
+          return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+
+        placeName() {
+          let s = this.baseName();
+          if (this.r() > 0.5) s += this.postfixes[(this.r() * this.postfixes.length) | 0];
+          return s;
+        }
+
+        npcName() {
+          return this.baseName();
+        }
       }
 
       function oneOf(r, src) {
@@ -1044,17 +1216,18 @@
         return a;
       }
 
-      function namedPOI(r, poiType) {
+      function namedPOI(nameGen, poiType) {
+        const r = nameGen.r;
         const style = (r() * 4) | 0;
-        const base = nameGen(r);
+        const base = nameGen.placeName();
         if (style === 0) return `${base} ${poiType}`;
         if (style === 1) return `The ${poiType} of ${base}`;
         if (style === 2) return `${poiType.charAt(0).toUpperCase() + poiType.slice(1)} at ${base}`;
         return `${base}'s ${poiType}`;
       }
 
-      function buildSettlementNames(r, count) {
-        return uniqN(count, () => nameGen(r));
+      function buildSettlementNames(nameGen, count) {
+        return uniqN(count, () => nameGen.placeName());
       }
 
       function placeWorldRefs(seedU32, theme, tileKeyGrid, N, poiTypes, factions, rText) {
@@ -1075,14 +1248,15 @@
         const settlementOrder = shuffleDet(r, settlements);
         const landOrder = shuffleDet(r, land);
 
-        const settlementNames = buildSettlementNames(rText, Math.max(6, settlements.length));
+        const nameGen = new NameGenerator(rText);
+        const settlementNames = buildSettlementNames(nameGen, Math.max(6, settlements.length));
         const settlementNameByCell = new Map();
         settlements.forEach((cell, i) => settlementNameByCell.set(cell, settlementNames[i % settlementNames.length]));
 
         const poiPlacements = [];
         for (let i = 0; i < poiTypes.length; i++) {
           const poiType = poiTypes[i];
-          const poiName = namedPOI(rText, poiType);
+          const poiName = namedPOI(nameGen, poiType);
 
           const cell = settlementOrder[i] || landOrder[i] || `${(seedU32 % N) | 0},${((seedU32 >>> 8) % N) | 0}`;
           poiPlacements.push({ poiType, poiName, cell });
@@ -1615,6 +1789,7 @@
             if (a?.fieldCamp) bits.push("Field Camp");
             if (a?.poi?.length) for (const p of a.poi) bits.push(`POI: ${p.name} [${p.type}]`);
             if (a?.factions?.length) for (const f of a.factions) bits.push(`Faction: ${f.name}`);
+            if (a?.npcs?.length) for (const n of a.npcs) bits.push(`NPC: ${n.name} — ${n.task}`);
 
             const title = escAttr(bits.join("\n"));
 
@@ -1706,6 +1881,9 @@
         const base = h32(String(seedStr));
         const r = xs32(base);
         const tt = T[theme] || T.fantasy;
+        const npcR = xs32(base ^ 0x52dce729);
+        const npcGen = new NameGenerator(npcR);
+        const npcCount = 2 + ((npcR() * 3) | 0);
 
         const toponyms = buildToponyms(r, 20);
         const region = buildRegionsFromToponyms(r, toponyms, 1)[0];
@@ -1735,9 +1913,64 @@
 
         const mapSeed = h32(seedStr + "|map|" + theme);
         const map0 = genMap(mapSeed, biome, tileset, null, climate);
+        const landCells = [];
+        for (let y = 0; y < map0.N; y++) {
+          for (let x = 0; x < map0.N; x++) {
+            if (map0.tileKeyGrid[y][x] !== "water") landCells.push(`${x},${y}`);
+          }
+        }
         const worldMeta = placeWorldRefs(mapSeed, theme, map0.tileKeyGrid, map0.N, poiTypes, factions, r);
-        const map1 = genMap(mapSeed, biome, tileset, worldMeta, climate);
+        const settlementEntries = Array.from(worldMeta.settlementNameByCell.entries());
+        const poiNames = worldMeta.poiPlacements.map((p) => p.poiName);
+        const npcLocationKinds = Object.keys(NPC_TASKS);
+        const npcs = [];
+        const seenNpcNames = new Set();
+        let guard = 0;
 
+        function pickLandCell() {
+          return landCells[(npcR() * landCells.length) | 0] || "0,0";
+        }
+
+        function npcLocationFor(kind) {
+          if (kind === "faction") {
+            const pick = oneOf(npcR, worldMeta.factionPlacements);
+            if (pick) return { prep: "with", label: pick.factionName, cell: pick.cell };
+          }
+          if (kind === "settlement" && settlementEntries.length) {
+            const [cell, name] = settlementEntries[(npcR() * settlementEntries.length) | 0];
+            return { prep: "in", label: name, cell };
+          }
+          return { prep: "out in", label: "the wilds", cell: pickLandCell() };
+        }
+
+        function npcPoiName() {
+          if (poiNames.length) return oneOf(npcR, poiNames);
+          return oneOf(npcR, tt.pois || ["site"]);
+        }
+
+        while (npcs.length < npcCount && guard++ < npcCount * 20) {
+          const name = npcGen.npcName();
+          if (seenNpcNames.has(name)) continue;
+          seenNpcNames.add(name);
+          const kind = npcLocationKinds[(npcR() * npcLocationKinds.length) | 0];
+          const taskTemplate = oneOf(npcR, NPC_TASKS[kind]);
+          const taskPoi = npcPoiName();
+          const task = resolvePlaceholders(taskTemplate, { poi: () => taskPoi, weather: () => weatherNow });
+          const loc = npcLocationFor(kind);
+          npcs.push({ name, task, prep: loc.prep, label: loc.label, cell: loc.cell });
+        }
+
+        for (const npc of npcs) {
+          let a = worldMeta.annotations.get(npc.cell);
+          if (!a) {
+            a = { poi: [], factions: [] };
+            worldMeta.annotations.set(npc.cell, a);
+          }
+          if (!a.npcs) a.npcs = [];
+          a.npcs.push({ name: npc.name, task: npc.task });
+        }
+
+        const map1 = genMap(mapSeed, biome, tileset, worldMeta, climate);
         const hookPick = oneOf(r, worldMeta.poiPlacements);
         const hookPOIName = hookPick ? hookPick.poiName : oneOf(r, tt.pois || ["facility"]);
         const hookPOICell = hookPick ? hookPick.cell : null;
@@ -1755,7 +1988,7 @@
         html += `Region : ${escHtml(region)}\n`;
         html += `Biome  : ${escHtml(biome)}\n`;
         html += `Coords : ${escHtml(coords)}\n`;
-        html += `Climate: ${escHtml(tempPick.label)} (tier ${tempPick.tier}), ${escHtml(rainPick.label)}, ${escHtml(climA)}\n`;
+        html += `Climate: ${escHtml(tempPick.label)}, ${escHtml(rainPick.label)}, ${escHtml(climA)}\n`;
         html += `Current Weather: ${escHtml(weatherNow)}\n\n`;
 
         html += `Factions (${factions.length}):\n`;
@@ -1767,11 +2000,17 @@
           html += `\t- Base: ${xref(fp.cell, baseName)} @ (${escHtml(fp.cell)})\n\n`;
         });
 
+        html += `NPCs (${npcs.length}):\n`;
+        npcs.forEach((npc) => {
+          html += `  - ${escHtml(npc.name)}: ${escHtml(npc.task)} ${escHtml(npc.prep)} ${xref(npc.cell, npc.label)}\n`;
+        });
+        html += "\n";
+
         html += `Points of Interest (${worldMeta.poiPlacements.length}):\n`;
         worldMeta.poiPlacements.forEach((p) => {
           const a = worldMeta.annotations.get(p.cell);
-          const near = a?.settlementName ? ` (near ${xref(p.cell, a.settlementName)})` : "";
-          html += `  - ${xref(p.cell, p.poiName)} [${escHtml(p.poiType)}] @ (${escHtml(p.cell)})${near}\n`;
+          const near = a?.settlementName ? `, near ${xref(p.cell, a.settlementName)}` : "";
+          html += `  - ${xref(p.cell, p.poiName)}${near} @ (${escHtml(p.cell)})\n`;
         });
 
         html += `\nHook: ${hookHtml}\n`;
