@@ -559,20 +559,145 @@
       **/
 
       /* ====================== Tables (themes) ====================== */
+      const GEO_FEATURES = [
+        "river-water",
+        "river-lava",
+        "mountain",
+        "lake",
+        "watering hole",
+        "dunes",
+        "oasis",
+        "ruins",
+        "ridge",
+        "reef",
+        "lagoon",
+        "mycelium",
+        "dead trees",
+      ];
+
       const T = {
         fantasy: {
           biome: [
-            "tundra",
-            "taiga",
-            "temperate forest",
-            "steppe",
-            "savanna",
-            "desert",
-            "jungle",
-            "wetlands",
-            "highlands",
-            "islands",
-            "badlands",
+            {
+              name: "tundra",
+              features: {
+                "river-water": 0.3,
+                lake: 0.25,
+                mountain: 0.35,
+                ridge: 0.4,
+                ruins: 0.15,
+              },
+            },
+            {
+              name: "taiga",
+              features: {
+                "river-water": 0.45,
+                lake: 0.35,
+                mountain: 0.25,
+                ridge: 0.3,
+                ruins: 0.2,
+                mycelium: 0.25,
+              },
+            },
+            {
+              name: "temperate forest",
+              features: {
+                "river-water": 0.5,
+                lake: 0.35,
+                ruins: 0.2,
+                ridge: 0.2,
+                mycelium: 0.3,
+              },
+            },
+            {
+              name: "steppe",
+              features: {
+                "river-water": 0.25,
+                lake: 0.15,
+                "watering hole": 0.3,
+                dunes: 0.25,
+                ridge: 0.2,
+                ruins: 0.15,
+              },
+            },
+            {
+              name: "savanna",
+              features: {
+                "river-water": 0.35,
+                lake: 0.2,
+                "watering hole": 0.45,
+                dunes: 0.2,
+                oasis: 0.15,
+                ruins: 0.1,
+              },
+            },
+            {
+              name: "desert",
+              features: {
+                "river-water": 0.1,
+                lake: 0.05,
+                "watering hole": 0.3,
+                dunes: 0.6,
+                oasis: 0.4,
+                ruins: 0.25,
+                ridge: 0.25,
+                "river-lava": 0.1,
+              },
+            },
+            {
+              name: "jungle",
+              features: {
+                "river-water": 0.6,
+                lake: 0.35,
+                ruins: 0.25,
+                lagoon: 0.25,
+                mycelium: 0.4,
+              },
+            },
+            {
+              name: "wetlands",
+              features: {
+                "river-water": 0.7,
+                lake: 0.45,
+                lagoon: 0.4,
+                mycelium: 0.3,
+                ruins: 0.15,
+              },
+            },
+            {
+              name: "highlands",
+              features: {
+                "river-water": 0.3,
+                mountain: 0.7,
+                ridge: 0.6,
+                lake: 0.2,
+                "river-lava": 0.15,
+                ruins: 0.2,
+              },
+            },
+            {
+              name: "islands",
+              features: {
+                "river-water": 0.25,
+                lake: 0.2,
+                reef: 0.7,
+                lagoon: 0.6,
+                dunes: 0.2,
+                ruins: 0.25,
+              },
+            },
+            {
+              name: "badlands",
+              features: {
+                "river-water": 0.15,
+                mountain: 0.4,
+                ridge: 0.6,
+                dunes: 0.3,
+                ruins: 0.35,
+                "river-lava": 0.2,
+                "dead trees": 0.3,
+              },
+            },
           ],
           temp: {
             1: "gelid",
@@ -785,7 +910,114 @@
         },
 
         scifi: {
-          biome: ["oceanic world", "barren craters", "lava fields", "arboreal belts", "fungal mats", "erg desert", "ice shelf", "toxic bogs", "megacity sector", "ring habitat", "tidal wetlands"],
+          biome: [
+            {
+              name: "oceanic world",
+              features: {
+                reef: 0.8,
+                lagoon: 0.7,
+                "river-water": 0.3,
+                lake: 0.2,
+                ruins: 0.15,
+              },
+            },
+            {
+              name: "barren craters",
+              features: {
+                ridge: 0.6,
+                mountain: 0.4,
+                "river-lava": 0.2,
+                ruins: 0.2,
+                lake: 0.05,
+              },
+            },
+            {
+              name: "lava fields",
+              features: {
+                "river-lava": 0.8,
+                mountain: 0.5,
+                ridge: 0.4,
+                ruins: 0.15,
+              },
+            },
+            {
+              name: "arboreal belts",
+              features: {
+                "river-water": 0.5,
+                lake: 0.3,
+                ruins: 0.2,
+                mycelium: 0.25,
+              },
+            },
+            {
+              name: "fungal mats",
+              features: {
+                mycelium: 0.8,
+                lake: 0.25,
+                "river-water": 0.35,
+                ruins: 0.2,
+              },
+            },
+            {
+              name: "erg desert",
+              features: {
+                dunes: 0.8,
+                oasis: 0.35,
+                "watering hole": 0.2,
+                "river-water": 0.15,
+                ruins: 0.2,
+              },
+            },
+            {
+              name: "ice shelf",
+              features: {
+                lake: 0.3,
+                "river-water": 0.2,
+                ridge: 0.35,
+                mountain: 0.3,
+                ruins: 0.1,
+              },
+            },
+            {
+              name: "toxic bogs",
+              features: {
+                "river-water": 0.5,
+                lake: 0.4,
+                lagoon: 0.25,
+                ruins: 0.2,
+                mycelium: 0.3,
+              },
+            },
+            {
+              name: "megacity sector",
+              features: {
+                ruins: 0.6,
+                ridge: 0.3,
+                "river-water": 0.25,
+                lake: 0.15,
+              },
+            },
+            {
+              name: "ring habitat",
+              features: {
+                "river-water": 0.35,
+                lake: 0.25,
+                lagoon: 0.3,
+                ridge: 0.2,
+                ruins: 0.2,
+              },
+            },
+            {
+              name: "tidal wetlands",
+              features: {
+                "river-water": 0.6,
+                lagoon: 0.6,
+                reef: 0.4,
+                lake: 0.3,
+                mycelium: 0.2,
+              },
+            },
+          ],
           temp: { 1: "cryonic", 2: "subzero", 3: "brisk", 4: "temperate", 5: "warm", 6: "tropic", 7: "equatorial", 8: "thermic" },
           rain: ["arid", "dry winds", "breezy", "humid", "mist-laden", "rainy", "storm-charged", "ion-saturated"],
           climateAdj: [
@@ -876,7 +1108,127 @@
         },
 
         apocalypse: {
-          biome: ["ruined city", "wasteland", "overgrowth", "floodplain", "ash desert", "irradiated zone", "salt flats", "scrapyard dunes", "bunker valley", "shattered highlands", "canal maze"],
+          biome: [
+            {
+              name: "ruined city",
+              features: {
+                ruins: 0.9,
+                "river-water": 0.25,
+                lake: 0.15,
+                ridge: 0.2,
+                mycelium: 0.2,
+                "dead trees": 0.2,
+              },
+            },
+            {
+              name: "wasteland",
+              features: {
+                ruins: 0.4,
+                ridge: 0.4,
+                mountain: 0.3,
+                "river-lava": 0.15,
+                dunes: 0.25,
+                "watering hole": 0.1,
+                "dead trees": 0.4,
+              },
+            },
+            {
+              name: "overgrowth",
+              features: {
+                "river-water": 0.5,
+                lake: 0.3,
+                ruins: 0.35,
+                mycelium: 0.5,
+                lagoon: 0.2,
+              },
+            },
+            {
+              name: "floodplain",
+              features: {
+                "river-water": 0.75,
+                lake: 0.5,
+                lagoon: 0.35,
+                ruins: 0.2,
+                reef: 0.1,
+              },
+            },
+            {
+              name: "ash desert",
+              features: {
+                dunes: 0.7,
+                "river-lava": 0.35,
+                ridge: 0.3,
+                ruins: 0.25,
+                oasis: 0.15,
+                "watering hole": 0.2,
+                "dead trees": 0.3,
+              },
+            },
+            {
+              name: "irradiated zone",
+              features: {
+                ruins: 0.4,
+                ridge: 0.3,
+                "river-lava": 0.2,
+                lake: 0.2,
+                mycelium: 0.25,
+                "dead trees": 0.35,
+              },
+            },
+            {
+              name: "salt flats",
+              features: {
+                lake: 0.25,
+                dunes: 0.4,
+                ridge: 0.3,
+                "river-water": 0.15,
+                ruins: 0.2,
+                oasis: 0.1,
+              },
+            },
+            {
+              name: "scrapyard dunes",
+              features: {
+                dunes: 0.8,
+                ruins: 0.5,
+                ridge: 0.3,
+                "river-lava": 0.2,
+                "watering hole": 0.1,
+                "dead trees": 0.25,
+              },
+            },
+            {
+              name: "bunker valley",
+              features: {
+                mountain: 0.4,
+                ridge: 0.5,
+                "river-water": 0.25,
+                lake: 0.2,
+                ruins: 0.35,
+              },
+            },
+            {
+              name: "shattered highlands",
+              features: {
+                mountain: 0.7,
+                ridge: 0.7,
+                "river-lava": 0.25,
+                ruins: 0.25,
+                lake: 0.15,
+                "dead trees": 0.25,
+              },
+            },
+            {
+              name: "canal maze",
+              features: {
+                "river-water": 0.8,
+                lagoon: 0.6,
+                lake: 0.4,
+                ruins: 0.3,
+                reef: 0.1,
+              },
+            },
+          ],
           temp: { 1: "frost-bit", 2: "cold", 3: "cool", 4: "mild", 5: "warm", 6: "hot", 7: "blistering", 8: "oven-hot" },
           rain: ["powder-dry", "dry gusts", "dusty", "clammy", "drizzle", "rain-battered", "monsoon-bent", "electric storms"],
           climateAdj: [
@@ -920,6 +1272,39 @@
         },
       };
             
+      
+      const FIELD_MOTIVE_VERBS = [
+        "mining",
+        "harvesting",
+        "excavating",
+        "mapping",
+        "exploring",
+        "tracking",
+        "studying",
+        "scanning",
+        "salvaging",
+        "charting",
+        "reclaiming",
+      ];
+
+      const BIOME_FEATURES_BY_NAME = (() => {
+        const out = {};
+        for (const tt of Object.values(T)) {
+          const biomes = tt?.biome || [];
+          for (const biome of biomes) {
+            if (!biome) continue;
+            if (typeof biome === "object") {
+              const name = String("name" in biome ? biome.name ?? "" : biome).toLowerCase();
+              if (name && !out[name]) out[name] = biome.features && typeof biome.features === "object" ? biome.features : {};
+            } else if (typeof biome === "string") {
+              const name = biome.toLowerCase();
+              if (!out[name]) out[name] = {};
+            }
+          }
+        }
+        return out;
+      })();
+
       const NPC_TASKS = {
         faction: [
           "recruiting new members for a difficult assignment",
@@ -1109,6 +1494,75 @@
         religious: { death: "⚱", monastery: "⛨" },
       };
 
+
+
+      const TEMPLATES = [
+        { name: "Title+Lineage", weight: 12, build: (r, L) => `${oneOf(r, L.titles)} ${oneOf(r, L.lineages)}` },
+        { name: "Title+Toponym", weight: 6, build: (r, L) => `${oneOf(r, L.titles)} ${oneOf(r, L.toponyms)}` },
+        { name: "The+Collective+of+Role", weight: 16, build: (r, L) => `The ${oneOf(r, L.collectives)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.roles)}` },
+        { name: "Role+of+Toponym", weight: 14, build: (r, L) => `${oneOf(r, L.roles)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.toponyms)}` },
+        { name: "The+Collective+of+Toponym", weight: 12, build: (r, L) => `The ${oneOf(r, L.collectives)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.toponyms)}` },
+        { name: "Abstract+of+Region", weight: 10, build: (r, L) => `${oneOf(r, L.abstracts)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.regions)}` },
+        { name: "Toponym+Company", weight: 8, build: (r, L) => `${oneOf(r, L.toponyms)} ${oneOf(r, L.tradeBodies)}` },
+        { name: "The+Nickname", weight: 7, build: (r, L) => `The ${oneOf(r, L.nicknames)}` },
+        { name: "Hybrid", weight: 9, build: (r, L) => `${oneOf(r, L.titles)} ${oneOf(r, L.lineages)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.toponyms)}` },
+        { name: "Role+Preposition+Site", weight: 6, build: (r, L) => `${oneOf(r, L.roles)} ${oneOf(r, L.prepsSite)} ${oneOf(r, L.sites)}` },
+      ];
+
+
+      /* ====================== Faction naming (fixed deterministic lexicon) ====================== */
+      const DEFAULT_COLLECTIVES = ["Order", "Guild", "Clan", "Court", "Circle", "Syndicate", "Chapter", "Coven", "Brotherhood", "Company", "League", "Consulate", "Caravan", "Enclave", "Assembly", "Dominion", "Conclave", "Pact", "Sect", "Keep", "Banner", "Kin", "House", "Hollow", "Sanctum", "Forge", "Crusade", "March", "Host"];
+      const DEFAULT_ROLES = ["Wardens", "Archivists", "Bonepickers", "Skyfarers", "Prospectors", "Scribes", "Wayfinders", "Stormcallers", "Reclaimers", "Oathkeepers", "Lamplighters", "Seers", "Witchbinders", "Lorehunters", "Pathmakers", "Gravetenders", "Runesmiths", "Beastwalkers", "Spellweavers", "Hearthguard", "Frostborn", "Flamebearers", "Thornwatch", "Miststriders"];
+      const LINEAGE_ROOTS = ["Var", "Tor", "Ash", "Hale", "Brenn", "Keth", "Mor", "Vale", "Dun", "Rav", "Fen", "Grey", "Orv", "Nyx", "Cal"];
+      const LINEAGE_SUFFIXES = ["yn", "ell", "ath", "ek", "ar", "os", "en", "ard", "ir", "an", "oth", "ic", "as"];
+      const TOPONYM_ROOTS = ["Ash", "Red", "Thorn", "Hollow", "River", "Stone", "Mist", "Oak", "Wolf", "Raven", "Sun", "Star", "Ember", "Frost", "Gold", "Mire", "Holt", "Rev", "Shale", "Writ"];
+      const TOPONYM_SUFFIXES = ["mere", "holt", "gate", "brig", "brook", "field", "wood", "veld", "keep", "bridge", "ward", "reach", "shire", "watch", "march", "moor", "ford", "fell", "crest", "vale", "dell", "dale", "fen", "scythe", "glen", "ryn"];
+      const REGIONIZERS = ["Low", "Upper", "High", "Outer", "Far", "Near", "Old", "New"];
+      const REGION_PLURALS = ["Marches", "Hills", "Moors", "Flats", "Wastes", "Reaches", "Wards", "Downs"];
+      const NICKNAME_COLORS = ["Black", "Red", "Grey", "White", "Gold", "Green", "Blue", "Umber", "Sable", "Crimson", "Azure"];
+      const NICKNAME_THINGS = ["Thorn", "Hand", "Lantern", "Crow", "Hound", "Spear", "Moth", "Mason", "Key", "Hammer", "Watch"];
+      const PREPS_OF = ["of", "of the"];
+      const PREPS_SITE = ["at", "under", "within", "beside", "along", "near"];
+      const ABSTRACTS = ["Pact", "Dominion", "March", "Compact", "Confederacy", "Concord", "Mandate", "League", "Charter"];
+      const TRADE_BODIES = ["Company", "Charter", "Shipping", "Freight", "Exchange", "Syndicate", "Cartage"];
+      const TITLE_WORDS = ["House", "Clan", "Order", "Circle", "Court", "Conclave", "Banner", "Keep", "Forge", "Sanctum", "Host"];
+      const SITE_BASES = ["Gate", "Bridge", "Wayhouse", "Watch", "Spire", "Hollow", "Vault", "Crossing", "Ford", "Hall", "Tower", "Works"];
+      const DEATH_MARKERS = ["ossuary", "cairn", "vault", "necropolis", "catacombs", "burial ground", "funerary mound", "memorial", "tomb", "crypt", "graveyard", "sepulchre", "cemetery", "mausoleum", "crematorium"];
+      const MONASTERY_MARKERS = ["Shrine", "Synagogue", "Pagoda", "Zendo", "Monastery", "Abbey", "Hermitage", "Sacred Grove", "Sacred Spring", "Temple", "Chapel", "Sanctum", "Sanctuary", "Stone Circle", "Oratory"];
+      const DEATH_GROUPS = ["mourners", "undertakers", "gravediggers", "deathwatch", "ossuary wardens", "memorialists", "grievers", "kin", "bereaved", "lamenters"];
+      const RELIGIOUS_GROUPS = ["devout", "ascetics", "clergy", "monks", "priests", "hermits", "pilgrims", "zealots", "brothers", "sisters", "cultists", "missionaries", "nuns", "friars", "elders", "druids", "seekers", "wayfarers", "penitents", "acolytes", "undertakers", "mediums", "shamans", "oracles", "prophets", "necromancers"];
+      const POI_STRUCTURE_KEYWORDS = [
+        "abbey",
+        "bunker",
+        "cathedral",
+        "chapel",
+        "citadel",
+        "dock",
+        "forge",
+        "fort",
+        "gate",
+        "hall",
+        "keep",
+        "mall",
+        "metro",
+        "monastery",
+        "outpost",
+        "plant",
+        "port",
+        "relay",
+        "sanctum",
+        "settlement",
+        "shrine",
+        "signal",
+        "spine",
+        "spire",
+        "station",
+        "tower",
+        "temple",
+        "vault",
+        "wayhouse",
+      ];
+
       /* ====================== Deterministic Core ====================== */
       function h32(s) {
         let h = 5381 >>> 0;
@@ -1191,6 +1645,53 @@
         return resolveInlineOptions(src, r);
       }
 
+      function normalizeBiomeFeatures(features, fallbackRarity = 0.3) {
+        const clampRarity = (value) => Math.max(0, Math.min(1, value));
+        if (!features) return {};
+        if (Array.isArray(features)) {
+          const out = {};
+          for (const f of features) {
+            if (typeof f === "string") {
+              out[f] = fallbackRarity;
+              continue;
+            }
+            if (f && typeof f === "object") {
+              const id = "id" in f ? f.id : "name" in f ? f.name : "";
+              const rarity = Number.isFinite(f.rarity) ? clampRarity(Number(f.rarity)) : fallbackRarity;
+              if (id) out[String(id)] = rarity;
+            }
+          }
+          return out;
+        }
+        if (typeof features === "object") {
+          const out = {};
+          for (const [key, value] of Object.entries(features)) {
+            if (!key) continue;
+            const rarity = Number.isFinite(value) ? clampRarity(Number(value)) : fallbackRarity;
+            out[String(key)] = rarity;
+          }
+          return out;
+        }
+        return {};
+      }
+
+      function normalizeBiome(biome) {
+        const defaultFeatures = normalizeBiomeFeatures(GEO_FEATURES);
+        if (!biome) return { name: "", features: {} };
+        if (typeof biome === "string") {
+          const known = normalizeBiomeFeatures(BIOME_FEATURES_BY_NAME[biome.toLowerCase()]);
+          return { name: biome, features: Object.keys(known).length ? known : defaultFeatures };
+        }
+        if (typeof biome === "object") {
+          const name = "name" in biome ? String(biome.name ?? "") : String(biome);
+          const features = normalizeBiomeFeatures(biome.features);
+          if (Object.keys(features).length) return { name, features };
+          const known = normalizeBiomeFeatures(BIOME_FEATURES_BY_NAME[name.toLowerCase()]);
+          return { name, features: Object.keys(known).length ? known : defaultFeatures };
+        }
+        return { name: String(biome), features: defaultFeatures };
+      }
+
       function maybe(rng, chance = 0.5) {
         return typeof rng === "function" ? rng() < chance : Math.random() < chance;
       }
@@ -1222,58 +1723,6 @@
         return { idx: 1, label: String(label) };
       }
 
-      /* ====================== Faction naming (fixed deterministic lexicon) ====================== */
-      const DEFAULT_COLLECTIVES = ["Order", "Guild", "Clan", "Court", "Circle", "Syndicate", "Chapter", "Coven", "Brotherhood", "Company", "League", "Consulate", "Caravan", "Enclave", "Assembly", "Dominion", "Conclave", "Pact", "Sect", "Keep", "Banner", "Kin", "House", "Hollow", "Sanctum", "Forge", "Crusade", "March", "Host"];
-      const DEFAULT_ROLES = ["Wardens", "Archivists", "Bonepickers", "Skyfarers", "Prospectors", "Scribes", "Wayfinders", "Stormcallers", "Reclaimers", "Oathkeepers", "Lamplighters", "Seers", "Witchbinders", "Lorehunters", "Pathmakers", "Gravetenders", "Runesmiths", "Beastwalkers", "Spellweavers", "Hearthguard", "Frostborn", "Flamebearers", "Thornwatch", "Miststriders"];
-      const LINEAGE_ROOTS = ["Var", "Tor", "Ash", "Hale", "Brenn", "Keth", "Mor", "Vale", "Dun", "Rav", "Fen", "Grey", "Orv", "Nyx", "Cal"];
-      const LINEAGE_SUFFIXES = ["yn", "ell", "ath", "ek", "ar", "os", "en", "ard", "ir", "an", "oth", "ic", "as"];
-      const TOPONYM_ROOTS = ["Ash", "Red", "Thorn", "Hollow", "River", "Stone", "Mist", "Oak", "Wolf", "Raven", "Sun", "Star", "Ember", "Frost", "Gold", "Mire", "Holt", "Rev", "Shale", "Writ"];
-      const TOPONYM_SUFFIXES = ["mere", "holt", "gate", "brig", "brook", "field", "wood", "veld", "keep", "bridge", "ward", "reach", "shire", "watch", "march", "moor", "ford", "fell", "crest", "vale", "dell", "dale", "fen", "scythe", "glen", "ryn"];
-      const REGIONIZERS = ["Low", "Upper", "High", "Outer", "Far", "Near", "Old", "New"];
-      const REGION_PLURALS = ["Marches", "Hills", "Moors", "Flats", "Wastes", "Reaches", "Wards", "Downs"];
-      const NICKNAME_COLORS = ["Black", "Red", "Grey", "White", "Gold", "Green", "Blue", "Umber", "Sable", "Crimson", "Azure"];
-      const NICKNAME_THINGS = ["Thorn", "Hand", "Lantern", "Crow", "Hound", "Spear", "Moth", "Mason", "Key", "Hammer", "Watch"];
-      const PREPS_OF = ["of", "of the"];
-      const PREPS_SITE = ["at", "under", "within", "beside", "along", "near"];
-      const ABSTRACTS = ["Pact", "Dominion", "March", "Compact", "Confederacy", "Concord", "Mandate", "League", "Charter"];
-      const TRADE_BODIES = ["Company", "Charter", "Shipping", "Freight", "Exchange", "Syndicate", "Cartage"];
-      const TITLE_WORDS = ["House", "Clan", "Order", "Circle", "Court", "Conclave", "Banner", "Keep", "Forge", "Sanctum", "Host"];
-      const SITE_BASES = ["Gate", "Bridge", "Wayhouse", "Watch", "Spire", "Hollow", "Vault", "Crossing", "Ford", "Hall", "Tower", "Works"];
-      const DEATH_MARKERS = ["ossuary", "cairn", "vault", "necropolis", "catacombs", "burial ground", "funerary mound", "memorial", "tomb", "crypt", "graveyard", "sepulchre", "cemetery", "mausoleum", "crematorium"];
-      const MONASTERY_MARKERS = ["Shrine", "Synagogue", "Pagoda", "Zendo", "Monastery", "Abbey", "Hermitage", "Sacred Grove", "Sacred Spring", "Temple", "Chapel", "Sanctum", "Sanctuary", "Stone Circle", "Oratory"];
-      const DEATH_GROUPS = ["mourners", "undertakers", "gravediggers", "deathwatch", "ossuary wardens", "memorialists", "grievers", "kin", "bereaved", "lamenters"];
-      const RELIGIOUS_GROUPS = ["devout", "ascetics", "clergy", "monks", "priests", "hermits", "pilgrims", "zealots", "brothers", "sisters", "cultists", "missionaries", "nuns", "friars", "elders", "druids", "seekers", "wayfarers", "penitents", "acolytes", "undertakers", "mediums", "shamans", "oracles", "prophets", "necromancers"];
-      const POI_STRUCTURE_KEYWORDS = [
-        "abbey",
-        "bunker",
-        "cathedral",
-        "chapel",
-        "citadel",
-        "dock",
-        "forge",
-        "fort",
-        "gate",
-        "hall",
-        "keep",
-        "mall",
-        "metro",
-        "monastery",
-        "outpost",
-        "plant",
-        "port",
-        "relay",
-        "sanctum",
-        "settlement",
-        "shrine",
-        "signal",
-        "spine",
-        "spire",
-        "station",
-        "tower",
-        "temple",
-        "vault",
-        "wayhouse",
-      ];
 
       function ensure(arr, fallback) {
         return Array.isArray(arr) && arr.length ? arr : fallback;
@@ -1330,18 +1779,6 @@
         return cartesian(NICKNAME_COLORS, NICKNAME_THINGS).map(([c, t]) => `${c} ${t}${maybe(r, 0.5) ? "s" : ""}`);
       }
 
-      const TEMPLATES = [
-        { name: "Title+Lineage", weight: 12, build: (r, L) => `${oneOf(r, L.titles)} ${oneOf(r, L.lineages)}` },
-        { name: "Title+Toponym", weight: 6, build: (r, L) => `${oneOf(r, L.titles)} ${oneOf(r, L.toponyms)}` },
-        { name: "The+Collective+of+Role", weight: 16, build: (r, L) => `The ${oneOf(r, L.collectives)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.roles)}` },
-        { name: "Role+of+Toponym", weight: 14, build: (r, L) => `${oneOf(r, L.roles)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.toponyms)}` },
-        { name: "The+Collective+of+Toponym", weight: 12, build: (r, L) => `The ${oneOf(r, L.collectives)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.toponyms)}` },
-        { name: "Abstract+of+Region", weight: 10, build: (r, L) => `${oneOf(r, L.abstracts)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.regions)}` },
-        { name: "Toponym+Company", weight: 8, build: (r, L) => `${oneOf(r, L.toponyms)} ${oneOf(r, L.tradeBodies)}` },
-        { name: "The+Nickname", weight: 7, build: (r, L) => `The ${oneOf(r, L.nicknames)}` },
-        { name: "Hybrid", weight: 9, build: (r, L) => `${oneOf(r, L.titles)} ${oneOf(r, L.lineages)} ${oneOf(r, L.prepsOf)} ${oneOf(r, L.toponyms)}` },
-        { name: "Role+Preposition+Site", weight: 6, build: (r, L) => `${oneOf(r, L.roles)} ${oneOf(r, L.prepsSite)} ${oneOf(r, L.sites)}` },
-      ];
 
       function buildLexicon(tt, r) {
         const roles = ensure(tt.roles, DEFAULT_ROLES);
@@ -1571,10 +2008,25 @@
       }
 
       /* ====================== ASCII Map ====================== */
+      function biomeHasFeatureAtLeast(biome, id, minRarity = 0) {
+        const { features } = normalizeBiome(biome);
+        const rarity = features?.[id];
+        return Number.isFinite(rarity) && rarity >= minRarity;
+      }
+
+      function isMountainousBiome(biome) {
+        return biomeHasFeatureAtLeast(biome, "mountain", 0.3) || biomeHasFeatureAtLeast(biome, "ridge", 0.3);
+      }
+
+      function normalizeWeights(weights) {
+        const total = Object.values(weights).reduce((a, b) => a + b, 0) || 1;
+        for (const k in weights) weights[k] /= total;
+      }
+
       function tileWeightsForBiome(biome) {
         const baseWeights = { water: 0.12, mountain: 0.15, forest: 0.25, grass: 0.2, plains: 0.28 };
         const inc = (k, f) => (baseWeights[k] = Math.max(0.01, baseWeights[k] * f));
-        const s = biome.toLowerCase();
+        const s = String(biome || "").toLowerCase();
 
         if (s.includes("desert") || s.includes("erg") || s.includes("salt")) {
           inc("plains", 2.2);
@@ -1603,7 +2055,7 @@
           inc("plains", 0.7);
           inc("mountain", 0.6);
         }
-        if (s.includes("highland") || s.includes("mount") || s.includes("shattered") || s.includes("ice shelf")) {
+        if (isMountainousBiome(s)) {
           inc("mountain", 2.0);
           inc("plains", 1.2);
           inc("forest", 0.9);
@@ -1617,8 +2069,7 @@
           inc("water", 0.9);
         }
 
-        const total = Object.values(baseWeights).reduce((a, b) => a + b, 0);
-        for (const k in baseWeights) baseWeights[k] /= total;
+        normalizeWeights(baseWeights);
         return baseWeights;
       }
 
@@ -1730,24 +2181,7 @@
       }
 
       function biomeAllowsRiver(biome) {
-        const s = biome.toLowerCase();
-        return (
-          s.includes("wetland") ||
-          s.includes("flood") ||
-          s.includes("river") ||
-          s.includes("jungle") ||
-          s.includes("forest") ||
-          s.includes("temperate") ||
-          s.includes("savanna") ||
-          s.includes("arboreal") ||
-          s.includes("overgrowth") ||
-          s.includes("canal") ||
-          s.includes("ocean") ||
-          s.includes("island") ||
-          s.includes("highland") ||
-          s.includes("taiga") ||
-          s.includes("fungal")
-        );
+        return biomeHasFeatureAtLeast(biome, "river-water", 0.25);
       }
 
       /* ====================== Shared grid helpers ====================== */
@@ -2091,22 +2525,9 @@
       }
 
       function biomeHasDeadTrees(biome, climate) {
-        const s = String(biome || "").toLowerCase();
         const tempTier = clamp(climate?.tempTier ?? 4, 1, 8);
         const rainIdx = clamp((climate?.rainIdx ?? 3) + 1, 1, 8);
-        if (
-          s.includes("desert") ||
-          s.includes("badland") ||
-          s.includes("barren") ||
-          s.includes("ash") ||
-          s.includes("irradiat") ||
-          s.includes("scrapyard") ||
-          s.includes("ruin") ||
-          s.includes("ruined") ||
-          s.includes("wasteland") ||
-          s.includes("lava")
-        )
-          return true;
+        if (biomeHasFeatureAtLeast(biome, "dead trees", 0.2)) return true;
         return tempTier >= 7 && rainIdx <= 2;
       }
 
@@ -2121,6 +2542,15 @@
       function genMap(seedU32, biome, tileset, worldMeta = null, climate = null) {
         const N = 25;
         const weights = tileWeightsForBiome(biome);
+        const mountainBias = n2(seedU32, 90500, 90600) < 0.3;
+        if (mountainBias) {
+          weights.mountain = Math.max(0.01, weights.mountain * 1.7);
+          weights.plains *= 0.85;
+          weights.grass *= 0.85;
+          weights.forest *= 0.85;
+          weights.water *= 0.9;
+          normalizeWeights(weights);
+        }
 
         const river = biomeAllowsRiver(biome) && n2(seedU32, 42000, 43000) > 0.35 ? riverCells(seedU32 ^ 0x9e3779b9, N) : new Set();
 
@@ -2301,7 +2731,8 @@
         const toponyms = buildToponyms(r, 20);
         const region = buildRegionsFromToponyms(r, toponyms, 1)[0];
 
-        const biome = oneOf(r, tt.biome);
+        const biome = normalizeBiome(oneOf(r, tt.biome));
+        const biomeName = biome.name;
         const tempPick = pickTempTier(r, tt);
         const rainPick = pickRainIndex(r, tt);
         const climA = oneOf(r, tt.climateAdj);
@@ -2325,7 +2756,7 @@
         const weatherNow = oneOf(r, tt.weather);
 
         const mapSeed = h32(seedStr + "|map|" + theme);
-        const map0 = genMap(mapSeed, biome, tileset, null, climate);
+        const map0 = genMap(mapSeed, biomeName, tileset, null, climate);
         const landCells = [];
         for (let y = 0; y < map0.N; y++) {
           for (let x = 0; x < map0.N; x++) {
@@ -2340,19 +2771,7 @@
         const npcs = [];
         const seenNpcNames = new Set();
         let guard = 0;
-        const fieldMotiveVerbs = new Set([
-          "mining",
-          "harvesting",
-          "excavating",
-          "mapping",
-          "exploring",
-          "tracking",
-          "studying",
-          "scanning",
-          "salvaging",
-          "charting",
-          "reclaiming",
-        ]);
+        const fieldMotiveVerbs = new Set(FIELD_MOTIVE_VERBS);
 
         function pickLandCell() {
           return landCells[(npcR() * landCells.length) | 0] || "0,0";
@@ -2523,7 +2942,7 @@
           a.npcs.push({ name: npc.name, task: npc.task });
         }
 
-        const map1 = genMap(mapSeed, biome, tileset, worldMeta, climate);
+        const map1 = genMap(mapSeed, biomeName, tileset, worldMeta, climate);
         const hookPick = oneOf(r, worldMeta.poiPlacements);
         const hookPOIName = hookPick ? hookPick.poiName : oneOf(r, tt.pois);
         const hookPOICell = hookPick ? hookPick.cell : null;
@@ -2539,7 +2958,7 @@
         let html = "";
         html += `Theme  : ${escHtml(theme)}\n`;
         html += `Region : ${escHtml(region)}\n`;
-        html += `Biome  : ${escHtml(biome)}\n`;
+        html += `Biome  : ${escHtml(biomeName)}\n`;
         html += `Coords : ${escHtml(coords)}\n`;
         html += `Climate: ${escHtml(tempPick.label)}, ${escHtml(rainPick.label)}, ${escHtml(climA)}\n`;
         html += `Current Weather: ${escHtml(weatherNow)}\n\n`;
@@ -2579,7 +2998,7 @@
 
         html += `\nHook: ${hookHtml}\n`;
 
-        const mapFlags = { deadTrees: biomeHasDeadTrees(biome, climate) };
+        const mapFlags = { deadTrees: biomeHasDeadTrees(biomeName, climate) };
 
         return { html, mapGrid: map1.html, mapFlags };
       }
