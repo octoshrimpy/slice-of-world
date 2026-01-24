@@ -35,11 +35,11 @@ Proposed Classes and Responsibilities
 - Owns DOM queries and event handlers.
 
 Class Refactor Tasks
-- Task: Create class skeletons with constructor signatures and stubs.
-- Task: Move helper functions into class methods without changing bodies.
-- Task: Replace free functions with class method calls.
-- Task: Keep top-level string arrays and tables unchanged.
-- Task: Keep init flow intact (generate, history, hash, UI events).
+- Task: Create class skeletons with constructor signatures and stubs. (done)
+- Task: Move helper functions into class methods without changing bodies. (done)
+- Task: Replace free functions with class method calls. (done)
+- Task: Keep top-level string arrays and tables unchanged. (done)
+- Task: Keep init flow intact (generate, history, hash, UI events). (done)
 
 End-State Structure (single file)
 - Tables (themes, tileset, string pools; all arrays top-level)
