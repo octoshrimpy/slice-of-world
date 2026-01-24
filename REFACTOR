@@ -1,0 +1,155 @@
+Refactor Plan (single file, no behavior changes)
+
+Goal
+- Reorder and group JS in index.html for readability and future refactors.
+- Keep all string arrays top-level, unchanged.
+- Preserve behavior; no renames unless handled in a single contained pass.
+
+Plan Sections and Tasks
+1) Data Tables and Constants
+- Task: Move all top-level string arrays into a single “Tables” section.
+- Task: Keep GEO_FEATURES, FIELD_MOTIVE_VERBS, NPC_TASKS, tileset, and T together.
+- Task: Keep arrays untouched; no content edits.
+
+2) RNG + Utilities
+- Task: Group hash/RNG helpers (h32, xs32, n2, randSeed).
+- Task: Group selection/normalization helpers (oneOf, pickWeighted, normalizeWeights, normalizeBiome, etc.).
+- Task: Group text helpers (escHtml, escAttr, escRe, xref, linkifyRefs).
+
+3) Naming + Lexicon
+- Task: Keep NameGenerator class in this section.
+- Task: Place toponyms/lineages/regions/nicknames and lexicon builders here.
+- Task: Keep factionName and namedPOI in this section.
+
+4) World Placement
+- Task: Group settlement/poi/faction placement helpers here.
+- Task: Keep placeWorldRefs and its nested helpers intact.
+
+5) Map Generation
+- Task: Group grid generation, rivers, depths/heights, patches, glyph pickers.
+- Task: Keep genMap as the section’s public entry.
+
+6) Slice Composition
+- Task: Group coord, resolvePlaceholders, composeHook, composeMotive.
+- Task: Keep buildSlice as the section’s public entry.
+
+7) State + UI
+- Task: Group DOM lookups, localStorage, history/favorites, render helpers.
+- Task: Keep generate() near UI state helpers.
+
+8) Events + Init
+- Task: Group event bindings and init IIFE at the end.
+- Task: Keep cross-hover binding near generate or in this section.
+
+---
+
+Target Structure (end state within index.html)
+- Tables (themes, tileset, string pools)
+  - GEO_FEATURES
+  - T (themes)
+  - FIELD_MOTIVE_VERBS
+  - NPC_TASKS
+  - tileset
+  - All top-level string arrays (SYL, DEFAULT_ROLES, etc.)
+
+- RNG + Utilities
+  - h32, xs32, n2, randSeed
+  - oneOf, pickWeighted, normalizeWeights, normalizeBiome/normalizeBiomeFeatures
+  - maybe, ensure, uniqN, cartesian, shuffleDet
+  - escAttr, escHtml, escRe, xref, linkifyRefs
+
+- Naming + Lexicon
+  - NameGenerator
+  - buildLineages, buildToponyms, buildRegionsFromToponyms, buildNicknames
+  - buildLexicon, factionName, namedPOI, poiIsStructure
+
+- World Placement
+  - buildSettlementNames
+  - placeWorldRefs (with ensureCell, rollCount, placeReligious inside)
+
+- Map Generation
+  - biome feature helpers, tile weights
+  - river/depth/height grid builders
+  - patch applicators (dunes, oasis, mycelium, beach, ruins)
+  - forest helpers
+  - genMap
+
+- Slice Composition
+  - coord, resolvePlaceholders, stem
+  - composeHook, composeMotive
+  - buildSlice (with nested local helpers)
+
+- State + UI
+  - DOM queries
+  - localStorage (loadLS, saveLS)
+  - renderLists, pushHistory, navigate, setCurrentSeed, parseHash, updateHash
+  - resolveTheme, doGenerate, bindCrossHover, generate, shareURL
+
+- Events + Init
+  - button handlers
+  - theme change
+  - hashchange
+  - init IIFE
+
+---
+
+Next Step: Execute the Refactor (no behavior changes)
+- Task: Reorder sections in index.html to match the target structure.
+- Task: Keep all string arrays top-level and in the Tables section.
+- Task: Preserve all function bodies and logic; only move blocks.
+- Task: Maintain nested helper scope where already nested.
+- Task: Verify basic flows after move (generate, hashchange, storage).
+
+---
+
+Class Refactor Plan (single file, behavior-preserving)
+Goal
+- Introduce clear classes around RNG, naming, world building, map generation, and UI.
+- Keep data tables and string arrays top-level.
+- Avoid changing algorithms; only move code into class methods.
+
+Proposed Classes and Responsibilities
+1) SeededRng
+- Inputs: seed string or u32 base.
+- Methods: h32, xs32, n2, randSeed, oneOf, pickWeighted, maybe, shuffleDet.
+- Notes: Keep standalone helpers for pure math if needed; class wraps per-seed ops.
+
+2) NameGenerator (existing)
+- Keep as-is but move into “Naming + Lexicon” section.
+- Owns NPC/faction naming where appropriate.
+
+3) LexiconBuilder
+- Methods: buildLineages, buildToponyms, buildRegionsFromToponyms, buildNicknames, buildLexicon.
+- Exposes data needed by factionName/namedPOI.
+
+4) WorldBuilder
+- Inputs: rng, theme tables, tileset, tiles grid.
+- Methods: buildSettlementNames, placeWorldRefs, buildSlice (or buildSlice stays top-level but calls WorldBuilder).
+- Owns NPC/faction placement and annotation logic.
+
+5) MapGenerator
+- Inputs: rng, biome, tileset, optional worldMeta/climate.
+- Methods: genMap and map helper routines (rivers, depths, heights, patches).
+- Exposes map html and flags.
+
+6) UIController
+- Inputs: document, storage, WorldBuilder/MapGenerator.
+- Methods: load/save, renderLists, setCurrentSeed, generate, bindCrossHover, wireEvents.
+- Owns DOM queries and event handlers.
+
+Class Refactor Tasks
+- Task: Create class skeletons with constructor signatures and stubs.
+- Task: Move helper functions into class methods without changing bodies.
+- Task: Replace free functions with class method calls.
+- Task: Keep top-level string arrays and tables unchanged.
+- Task: Keep init flow intact (generate, history, hash, UI events).
+
+End-State Structure (single file)
+- Tables (themes, tileset, string pools; all arrays top-level)
+- RNG + Utilities (pure helpers, plus SeededRng class)
+- Naming + Lexicon (NameGenerator, LexiconBuilder)
+- World Placement (WorldBuilder)
+- Map Generation (MapGenerator)
+- Slice Composition (either WorldBuilder.buildSlice or top-level wrapper)
+- State + UI (UIController)
+- Events + Init (UIController wiring + init IIFE)
