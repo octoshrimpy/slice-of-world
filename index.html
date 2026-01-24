@@ -2676,19 +2676,60 @@
         };
 
         const pickDir = () => dirs[(rand() * dirs.length) | 0];
-        const pickPerpendicular = (dx, dy) => {
-          if (dx !== 0) return rand() < 0.5 ? [0, 1] : [0, -1];
-          return rand() < 0.5 ? [1, 0] : [-1, 0];
+        const downhillAngle = rand() * Math.PI * 2;
+        const downhill = { x: Math.cos(downhillAngle), y: Math.sin(downhillAngle) };
+        const margin = Math.max(3, Math.floor(N * 0.08));
+        const startFromEdge = () => {
+          if (Math.abs(downhill.x) > Math.abs(downhill.y)) {
+            const x = downhill.x > 0 ? -margin : N - 1 + margin;
+            const y = (rand() * N) | 0;
+            return { x, y };
+          }
+          const x = (rand() * N) | 0;
+          const y = downhill.y > 0 ? -margin : N - 1 + margin;
+          return { x, y };
         };
-        const lenMain = Math.floor(N * (1.5 + rand() * 0.8));
+        const flowDirForCell = (x, y) => {
+          const n1 = rngUtil.n2(seedU32, 81000 + x, 82000 + y);
+          const n2 = rngUtil.n2(seedU32, 83000 + x, 84000 + y);
+          const ang = n1 * Math.PI * 2;
+          const mag = 0.45 + n2 * 0.35;
+          const vx = downhill.x + Math.cos(ang) * mag;
+          const vy = downhill.y + Math.sin(ang) * mag;
+          const len = Math.hypot(vx, vy) || 1;
+          return { x: vx / len, y: vy / len };
+        };
+        const pickBiasedDir = (x, y) => {
+          const v = flowDirForCell(x, y);
+          let best = null;
+          let sum = 0;
+          const weights = [];
+          for (const d of dirs) {
+            const dot = d[0] * v.x + d[1] * v.y;
+            const w = Math.max(0.02, 0.18 + Math.max(0, dot) * 0.95);
+            weights.push(w);
+            sum += w;
+          }
+          let t = rand() * sum;
+          for (let i = 0; i < dirs.length; i++) {
+            t -= weights[i];
+            if (t <= 0) {
+              best = dirs[i];
+              break;
+            }
+          }
+          return best || dirs[0];
+        };
+        const lenMain = Math.floor(N * (1.8 + rand() * 0.9));
+        const startPos = startFromEdge();
         const start = {
-          x: (rand() * N) | 0,
-          y: (rand() * N) | 0,
+          x: startPos.x,
+          y: startPos.y,
           len: lenMain,
           width: 1,
-          branchChance: 0.04,
-          turnChance: 0.35,
-          dir: pickDir(),
+          branchChance: 0.03,
+          turnChance: 0.32,
+          dir: pickBiasedDir(startPos.x, startPos.y),
         };
 
         const queue = [start];
@@ -2700,7 +2741,7 @@
           let dy = p.dir[1];
 
           for (let i = 0; i < p.len; i++) {
-            const width = rand() < 0.03 ? 2 : p.width;
+            const width = p.width;
             addCells(x, y, width);
 
             if (rand() < p.branchChance && p.len - i > 8) {
@@ -2711,12 +2752,12 @@
                 width: 1,
                 branchChance: p.branchChance * 0.6,
                 turnChance: p.turnChance * 0.85,
-                dir: pickDir(),
+                dir: pickBiasedDir(x, y),
               });
             }
 
             if (rand() < p.turnChance) {
-              const nd = pickPerpendicular(dx, dy);
+              const nd = pickBiasedDir(x, y);
               dx = nd[0];
               dy = nd[1];
             }
@@ -2724,20 +2765,7 @@
             x += dx;
             y += dy;
 
-            if (x < 0) {
-              x = 0;
-              dx = 1;
-            } else if (x >= N) {
-              x = N - 1;
-              dx = -1;
-            }
-            if (y < 0) {
-              y = 0;
-              dy = 1;
-            } else if (y >= N) {
-              y = N - 1;
-              dy = -1;
-            }
+            if (x < -margin || x > N - 1 + margin || y < -margin || y > N - 1 + margin) break;
           }
         }
         return cells;
@@ -3354,7 +3382,7 @@
             const roll = rngUtil.n2(seedU32, 70200 + x, 70300 + y);
             return roll < 0.6 ? "dead" : "deciduous";
           }
-          return "deciduous";
+          return "dead";
         }
 
         if (rainIdx >= 6 && tempTier >= 5) return "deciduous";
