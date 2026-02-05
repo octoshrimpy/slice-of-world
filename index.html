@@ -3,15 +3,35 @@
     <meta charset="utf-8" />
     <title>Slice-of-World Generator</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&family=Noto+Sans+Linear+A&family=Noto+Sans+Linear+B&family=Noto+Emoji&display=swap">
     <style>
-      @font-face {
-        font-family: "unifontex";
-        src: url("https://stgiga.github.io/UnifontEX/UnifontExMono.ttf");
-        font-style: normal;
-        font-weight: 400;
-        font-display: block;
+  @font-face {
+  font-family: 'UnifontExMono';
+  src: url('http://stgiga.github.io/UnifontEX/UnifontExMono.eot'); /* IE9 Compat Modes */
+  src: url('http://stgiga.github.io/UnifontEX/UnifontExMono.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('https://stgiga.github.io/UnifontEX/UnifontExMono.woff') format('woff'), /* Pretty Modern Browsers */
+       url('https://stgiga.github.io/UnifontEX/UnifontExMono.ttf')  format('truetype'), /* Safari, Android, iOS */
+       url('http://stgiga.github.io/UnifontEX/UnifontExMono.woff2') format('woff2'), /* Super Modern Browsers */
+       url('http://stgiga.github.io/UnifontEX/UnifontExMono.svg#UnifontExMono') format('svg'); /* Legacy iOS */
+}
+
+            
+      /* Use UnifontEX first, then Noto fallbacks */
+      :root{
+        --app-font:
+          "UnifontExMono",
+          "Noto Sans",
+          "Noto Sans Linear A",
+          "Noto Sans Linear B",
+          "Noto Sans Symbols 2",
+          "Noto Sans Symbols",
+          "Noto Emoji",
+          monospace;
       }
 
+      html, body, * {
+        font-family: var(--app-font);
+      }
 
       /* ====================== Sweetie16 (ONLY literal colors) ====================== */
       :root {
@@ -87,6 +107,8 @@
           var(--tile-ruins) 50%,
           var(--sw5)
         );
+        --tile-road-primary: color-mix(in srgb, var(--sw4) 10%, var(--sw0));
+        --tile-road-secondary: color-mix(in srgb, var(--sw15) 10%, var(--sw0));
         --tile-fungal-settlement: color-mix(
           in srgb,
           var(--tile-mycelium) 45%,
@@ -119,17 +141,6 @@
         padding: 0;
         background: var(--bg);
         color: var(--fg);
-        font-family:
-          "unifontex",
-          "CozetteVector",
-          ui-monospace,
-          SFMono-Regular,
-          Menlo,
-          Monaco,
-          Consolas,
-          "Liberation Mono",
-          "Courier New",
-          monospace;
       }
 
       header {
@@ -256,17 +267,6 @@
         white-space: pre;
         overflow: auto;
         margin: 0;
-        font-family:
-          "unifontex",
-          "CozetteVector",
-          ui-monospace,
-          SFMono-Regular,
-          Menlo,
-          Monaco,
-          Consolas,
-          "Liberation Mono",
-          "Courier New",
-          monospace;
       }
 
       #out {
@@ -306,7 +306,6 @@
         width: 1.2rem;
         height: 1.2rem;
         transition: all 0.15s ease-in-out;
-        border-radius: 50%;
       }
       #map span.map-label {
         width: auto;
@@ -432,6 +431,25 @@
       #map span[data-tile="crystal"][data-crystal="green"] {
         color: var(--tile-crystal-green);
         filter: saturate(1);
+      }
+      #map span[data-road="primary"] {
+        opacity: 1;
+        /* background: color-mix(in srgb, var(--tile-road-primary) 75%, transparent); */
+        /* box-shadow: inset 0 0 0.2rem color-mix(in srgb, var(--tile-road-primary) 70%, transparent); */
+      }
+      #map span[data-road="secondary"] {
+        opacity: 0.23;
+        /* background: color-mix(in srgb, var(--tile-road-secondary) 70%, transparent); */
+        /* box-shadow: inset 0 0 0.2rem color-mix(in srgb, var(--tile-road-secondary) 60%, transparent); */
+      }
+      #map span[data-road] {
+
+        .road-glyph {
+          display: inline-flex;
+          transform: scaleX(2);
+          transform-origin: center;
+          pointer-events: none;
+        }
       }
 
       .small {
@@ -4161,7 +4179,7 @@
             N,
             climate,
           );
-          tileKeyGrid = applyLavaEdge(tileKeyGrid, N);
+          tileKeyGrid = applyLavaEdge(tileKeyGrid, N, worldMeta);
           tileKeyGrid = cleanupIsolatedWater(
             seedU32,
             tileKeyGrid,
@@ -4201,6 +4219,13 @@
             oasisVeg,
             biomeAllowsFeature,
           );
+          const roadInfo = buildRoadNetwork(
+            seedU32,
+            tileKeyGrid,
+            heightGrid,
+            worldMeta,
+            N,
+          );
           const html = renderMapHtml(
             seedU32,
             tileKeyGrid,
@@ -4211,6 +4236,7 @@
             worldMeta,
             tileset,
             this.pickVariant.bind(this),
+            roadInfo,
           );
 
           return {
@@ -4219,6 +4245,7 @@
             depthGrid,
             heightGrid,
             forestTypeGrid,
+            roadCells: roadInfo.cells,
             N,
             river,
           };
@@ -4738,13 +4765,27 @@
         return bumpDepthCenters(tileKeyGrid, smoothed, N, liquidKey);
       }
 
-      function applyLavaEdge(tileKeyGrid, N) {
+      function applyLavaEdge(tileKeyGrid, N, worldMeta) {
         const next = tileKeyGrid.map((row) => row.slice());
+        const protectedTiles = new Set([
+          "settlement",
+          "camp",
+          "ruins",
+          "overgrown-ruins",
+          "religious",
+        ]);
+        const protectedCells = new Set();
+        if (worldMeta?.annotations) {
+          for (const cell of worldMeta.annotations.keys())
+            protectedCells.add(cell);
+        }
         for (let y = 0; y < N; y++) {
           for (let x = 0; x < N; x++) {
             if (tileKeyGrid[y][x] !== "lava") continue;
             for (const [nx, ny] of neighbors8(N, x, y)) {
               const k = tileKeyGrid[ny][nx];
+              if (protectedTiles.has(k)) continue;
+              if (protectedCells.has(`${nx},${ny}`)) continue;
               if (k === "mountain" || k === "water") continue;
               next[ny][nx] = "lava";
             }
@@ -5402,6 +5443,364 @@
         return forestTypeGrid;
       }
 
+      function parseCell(cell) {
+        const parts = String(cell || "").split(",");
+        const x = Number(parts[0]);
+        const y = Number(parts[1]);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+        return { x, y };
+      }
+
+      function manhattanCell(a, b) {
+        const pa = parseCell(a);
+        const pb = parseCell(b);
+        if (!pa || !pb) return Infinity;
+        return Math.abs(pa.x - pb.x) + Math.abs(pa.y - pb.y);
+      }
+
+      function isMountainPass(tileKeyGrid, heightGrid, x, y) {
+        if (tileKeyGrid[y][x] !== "mountain") return false;
+        const h = clamp(heightGrid[y][x] || 1, 1, 5);
+        return h <= 2;
+      }
+
+      function isAdjacentTo(tileKeyGrid, N, x, y, key) {
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue;
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || nx >= N || ny < 0 || ny >= N) continue;
+            if (tileKeyGrid[ny][nx] === key) return true;
+          }
+        }
+        return false;
+      }
+
+      function isAdjacentRoad(roadCells, N, x, y) {
+        if (!roadCells) return false;
+        const dirs = [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ];
+        for (const [dx, dy] of dirs) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || nx >= N || ny < 0 || ny >= N) continue;
+          if (roadCells.has(`${nx},${ny}`)) return true;
+        }
+        return false;
+      }
+
+      function roadGlyph(roadCells, N, x, y) {
+        const has = (dx, dy) => {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || nx >= N || ny < 0 || ny >= N) return false;
+          return roadCells.has(`${nx},${ny}`);
+        };
+        const n = has(0, -1);
+        const s = has(0, 1);
+        const w = has(-1, 0);
+        const e = has(1, 0);
+
+        if (n && s && w && e) return "╬";
+        if (n && s && w) return "╣";
+        if (n && s && e) return "╠";
+        if (n && w && e) return "╩";
+        if (s && w && e) return "╦";
+        if (n && s) return "║";
+        if (w && e) return "═";
+        if (n && e) return "╚";
+        if (n && w) return "╝";
+        if (s && e) return "╔";
+        if (s && w) return "╗";
+        if (n || s) return "║";
+        return "═";
+      }
+
+      function isPassable(tileKeyGrid, x, y) {
+        const k = tileKeyGrid[y][x];
+        return k !== "water" && k !== "lava";
+      }
+
+      function terrainCost(tileKeyGrid, heightGrid, x, y, roadCells) {
+        const k = tileKeyGrid[y][x];
+        if (k === "water" || k === "lava") return Infinity;
+        let cost = 1;
+        if (k === "mountain") {
+          const h = clamp(heightGrid[y][x] || 1, 1, 5);
+          cost = h <= 2 ? 4 : h === 3 ? 12 : 30;
+        } else if (k === "forest") {
+          cost = 1.6;
+        } else if (k === "desert") {
+          cost = 1.4;
+        } else if (k === "beach") {
+          cost = 1.2;
+        } else if (k === "mycelium") {
+          cost = 1.5;
+        } else if (k === "crystal") {
+          cost = 1.5;
+        } else if (k === "ruins" || k === "overgrown-ruins") {
+          cost = 1.3;
+        } else if (k === "grass") {
+          cost = 1.1;
+        }
+        if (roadCells?.has(`${x},${y}`)) cost *= 0.7;
+        const N = tileKeyGrid.length;
+        if (!roadCells?.has(`${x},${y}`) && isAdjacentRoad(roadCells, N, x, y))
+          cost *= 1.2;
+        if (isAdjacentTo(tileKeyGrid, N, x, y, "water")) cost *= 0.85;
+        if (
+          isAdjacentTo(tileKeyGrid, N, x, y, "forest") ||
+          isAdjacentTo(tileKeyGrid, N, x, y, "mycelium")
+        )
+          cost *= 0.9;
+        return cost;
+      }
+
+      function weightedPick(rand, items) {
+        let sum = 0;
+        for (const it of items) sum += it.w;
+        let t = rand() * sum;
+        for (const it of items) {
+          t -= it.w;
+          if (t <= 0) return it;
+        }
+        return items[items.length - 1];
+      }
+
+      function aStarPath(
+        startCell,
+        goalCell,
+        N,
+        tileKeyGrid,
+        heightGrid,
+        roadCells,
+      ) {
+        if (!startCell || !goalCell) return null;
+        if (startCell === goalCell) return [startCell];
+
+        const start = parseCell(startCell);
+        const goal = parseCell(goalCell);
+        if (!start || !goal) return null;
+
+        const idx = (x, y) => y * N + x;
+        const startIdx = idx(start.x, start.y);
+        const goalIdx = idx(goal.x, goal.y);
+
+        const gScore = new Array(N * N).fill(Infinity);
+        const fScore = new Array(N * N).fill(Infinity);
+        const cameFrom = new Array(N * N).fill(-1);
+
+        const heuristic = (x, y) =>
+          Math.abs(x - goal.x) + Math.abs(y - goal.y);
+
+        gScore[startIdx] = 0;
+        fScore[startIdx] = heuristic(start.x, start.y);
+
+        const open = [startIdx];
+        const openSet = new Set([startIdx]);
+
+        const dirs = [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ];
+
+        while (open.length) {
+          let bestIndex = 0;
+          let best = open[0];
+          let bestScore = fScore[best];
+          for (let i = 1; i < open.length; i++) {
+            const candidate = open[i];
+            const score = fScore[candidate];
+            if (score < bestScore) {
+              bestScore = score;
+              best = candidate;
+              bestIndex = i;
+            }
+          }
+          open.splice(bestIndex, 1);
+          openSet.delete(best);
+
+          if (best === goalIdx) {
+            const path = [];
+            let cur = best;
+            while (cur >= 0) {
+              const cx = cur % N;
+              const cy = (cur / N) | 0;
+              path.push(`${cx},${cy}`);
+              cur = cameFrom[cur];
+            }
+            return path.reverse();
+          }
+
+          const cx = best % N;
+          const cy = (best / N) | 0;
+          for (const [dx, dy] of dirs) {
+            const nx = cx + dx;
+            const ny = cy + dy;
+            if (nx < 0 || nx >= N || ny < 0 || ny >= N) continue;
+            let stepCost = terrainCost(
+              tileKeyGrid,
+              heightGrid,
+              nx,
+              ny,
+              roadCells,
+            );
+            if (!Number.isFinite(stepCost)) continue;
+            const nidx = idx(nx, ny);
+            const tentative = gScore[best] + stepCost;
+            if (tentative < gScore[nidx]) {
+              cameFrom[nidx] = best;
+              gScore[nidx] = tentative;
+              fScore[nidx] = tentative + heuristic(nx, ny);
+              if (!openSet.has(nidx)) {
+                openSet.add(nidx);
+                open.push(nidx);
+              }
+            }
+          }
+        }
+        return null;
+      }
+
+      function buildRoadNetwork(
+        seedU32,
+        tileKeyGrid,
+        heightGrid,
+        worldMeta,
+        N,
+      ) {
+        if (!worldMeta) return { cells: new Set(), kindByCell: new Map() };
+        const settlements = Array.from(worldMeta.settlementNameByCell.keys());
+        const pois = (worldMeta.poiPlacements || []).map((p) => p.cell);
+        if (!settlements.length && !pois.length)
+          return { cells: new Set(), kindByCell: new Map() };
+
+        const roadCells = new Set();
+        const roadKindByCell = new Map();
+        const edges = [];
+        const edgeSet = new Set();
+
+        const findNearestPassable = (cell, maxRadius = 4) => {
+          const p = parseCell(cell);
+          if (!p) return null;
+          if (isPassable(tileKeyGrid, p.x, p.y)) return cell;
+          for (let r = 1; r <= maxRadius; r++) {
+            for (let dy = -r; dy <= r; dy++) {
+              for (let dx = -r; dx <= r; dx++) {
+                if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+                const nx = p.x + dx;
+                const ny = p.y + dy;
+                if (nx < 0 || nx >= N || ny < 0 || ny >= N) continue;
+                if (isPassable(tileKeyGrid, nx, ny)) return `${nx},${ny}`;
+              }
+            }
+          }
+          return null;
+        };
+
+        const addEdge = (a, b) => {
+          if (!a || !b || a === b) return;
+          const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+          if (edgeSet.has(key)) return;
+          edgeSet.add(key);
+          edges.push({ a, b });
+        };
+
+        if (settlements.length >= 2) {
+          const pairs = [];
+          for (let i = 0; i < settlements.length; i++) {
+            for (let j = i + 1; j < settlements.length; j++) {
+              const a = settlements[i];
+              const b = settlements[j];
+              pairs.push({ a, b, d: manhattanCell(a, b) });
+            }
+          }
+          pairs.sort((p, q) => p.d - q.d);
+
+          const parent = new Map();
+          const find = (x) => {
+            const p = parent.get(x);
+            if (!p || p === x) return x;
+            const root = find(p);
+            parent.set(x, root);
+            return root;
+          };
+          const unite = (a, b) => {
+            const ra = find(a);
+            const rb = find(b);
+            if (ra !== rb) parent.set(ra, rb);
+          };
+          for (const s of settlements) parent.set(s, s);
+
+          for (const pair of pairs) {
+            if (find(pair.a) !== find(pair.b)) {
+              unite(pair.a, pair.b);
+              addEdge(pair.a, pair.b);
+            }
+          }
+        }
+
+        for (const poi of pois) {
+          if (!settlements.length && pois.length > 1) {
+            let best = null;
+            let bestD = Infinity;
+            for (const other of pois) {
+              if (other === poi) continue;
+              const d = manhattanCell(poi, other);
+              if (d < bestD) {
+                bestD = d;
+                best = other;
+              }
+            }
+            addEdge(poi, best);
+            continue;
+          }
+          let best = null;
+          let bestD = Infinity;
+          for (const s of settlements) {
+            const d = manhattanCell(poi, s);
+            if (d < bestD) {
+              bestD = d;
+              best = s;
+            }
+          }
+          addEdge(poi, best);
+        }
+
+        const stampRoad = (path) => {
+          if (!path || !path.length) return;
+          for (const cell of path) {
+            roadCells.add(cell);
+            roadKindByCell.set(cell, "primary");
+          }
+        };
+
+        for (const edge of edges) {
+          const { a, b } = edge;
+          const edgeSeed = rngUtil.h32(`${seedU32}|${a}|${b}|road`);
+          const rand = rngUtil.xs32(edgeSeed);
+          let path = aStarPath(
+            a,
+            b,
+            N,
+            tileKeyGrid,
+            heightGrid,
+            roadCells,
+          );
+          if (!path || !path.length) continue;
+          stampRoad(path);
+        }
+
+        return { cells: roadCells, kindByCell: roadKindByCell };
+      }
+
       function renderMapHtml(
         seedU32,
         tileKeyGrid,
@@ -5412,9 +5811,12 @@
         worldMeta,
         tileset,
         pickVariant,
+        roadInfo,
       ) {
         const ann = worldMeta?.annotations || new Map();
         const rpick = rngUtil.xs32((seedU32 ^ 0x5a5a5a5a) >>> 0);
+        const roadCells = roadInfo?.cells || new Set();
+        const roadKindByCell = roadInfo?.kindByCell || new Map();
 
         let s = "";
         for (let y = 0; y < N; y++) {
@@ -5423,6 +5825,23 @@
             const tileKey = tileKeyGrid[y][x];
             const key = `${x},${y}`;
             const a = ann.get(key);
+            const blocksRoadTile =
+              a?.poiStructure ||
+              a?.fieldCamp ||
+              a?.religious ||
+              a?.settlementName ||
+              a?.poi?.length ||
+              tileKey === "settlement" ||
+              tileKey === "camp" ||
+              tileKey === "ruins" ||
+              tileKey === "overgrown-ruins";
+            const hasRoad =
+              roadCells?.has(key) &&
+              tileKey !== "water" &&
+              tileKey !== "lava" &&
+              !blocksRoadTile;
+            let roadKind = roadKindByCell.get(key) || "primary";
+            const roadAttr = hasRoad ? ` data-road="${roadKind}"` : "";
 
             const contentParts = [];
             if (tileKey === "water" || tileKey === "lava")
@@ -5433,6 +5852,14 @@
               contentParts.push(
                 `height: ${clamp(heightGrid[y][x] || 1, 1, 5)}`,
               );
+            if (hasRoad) {
+              const label = "Road (primary)";
+              contentParts.push(
+                isMountainPass(tileKeyGrid, heightGrid, x, y)
+                  ? `${label} — pass`
+                  : label,
+              );
+            }
             if (tileKey === "forest")
               contentParts.push(`forest: ${forestTypeGrid[y][x] || "mixed"}`);
             if (a?.settlementName) {
@@ -5476,17 +5903,18 @@
               !a?.fieldCamp &&
               !a?.religious &&
               tileKey !== "water";
+            const allowRoadGlyph = hasRoad;
 
             if (showStructure) {
               const variantSeed = rngUtil.n2(seedU32, x + 999, y + 999);
               const ch = pickVariant("settlement", tileset, variantSeed);
-              row += `<span data-cell="${x},${y}" data-tile="settlement" data-poi="structure" title="${title}">${ch}</span>`;
+              row += `<span data-cell="${x},${y}" data-tile="settlement"${roadAttr} data-poi="structure" title="${title}">${ch}</span>`;
             } else if (a?.fieldCamp) {
               const ch =
                 rngUtil.oneOf(rpick, baseGlyphs(tileset.camp)) ||
                 firstBaseGlyph(tileset.settlement) ||
                 firstBaseGlyph(tileset.plains, "?");
-              row += `<span data-cell="${x},${y}" data-tile="camp" title="${title}">${ch}</span>`;
+              row += `<span data-cell="${x},${y}" data-tile="camp"${roadAttr} title="${title}">${ch}</span>`;
             } else if (a?.religious) {
               const rel = a.religious;
               const fallbackRel =
@@ -5496,31 +5924,39 @@
                 firstBaseGlyph(tileset.plains, "?");
               const ch =
                 rngUtil.oneOf(rpick, rel.glyph) || rngUtil.oneOf(rpick, tileset.religious?.[rel.kind]) || fallbackRel;
-              row += `<span data-cell="${x},${y}" data-tile="religious" data-religious="${escAttr(rel.kind)}" title="${title}">${ch}</span>`;
+              row += `<span data-cell="${x},${y}" data-tile="religious"${roadAttr} data-religious="${escAttr(rel.kind)}" title="${title}">${ch}</span>`;
             } else if (tileKey === "water" || tileKey === "lava") {
               const d = clamp(depthGrid[y][x] || 1, 1, 3);
               const ch = liquidGlyph(tileKey, d, tileset, seedU32, x, y);
-              row += `<span data-cell="${x},${y}" data-tile="${tileKey}" data-depth="${d}" title="${title}">${ch}</span>`;
+              row += `<span data-cell="${x},${y}" data-tile="${tileKey}"${roadAttr} data-depth="${d}" title="${title}">${ch}</span>`;
             } else if (tileKey === "mountain") {
               const h = clamp(heightGrid[y][x] || 1, 1, 5);
-              const ch = mountainGlyph(h, tileset);
-              row += `<span data-cell="${x},${y}" data-tile="mountain" data-height="${h}" title="${title}">${ch}</span>`;
+              const ch = allowRoadGlyph
+                ? `<span class="road-glyph">${roadGlyph(roadCells, N, x, y)}</span>`
+                : mountainGlyph(h, tileset);
+              row += `<span data-cell="${x},${y}" data-tile="mountain"${roadAttr} data-height="${h}" title="${title}">${ch}</span>`;
             } else if (tileKey === "forest") {
               const ft = forestTypeGrid[y][x] || "mixed";
               const variantSeed = rngUtil.n2(seedU32, x + 999, y + 999);
-              const ch = forestGlyphForType(ft, variantSeed, tileset);
-              row += `<span data-cell="${x},${y}" data-tile="forest" data-forest="${escAttr(ft)}" title="${title}">${ch}</span>`;
+              const ch = allowRoadGlyph
+                ? `<span class="road-glyph">${roadGlyph(roadCells, N, x, y)}</span>`
+                : forestGlyphForType(ft, variantSeed, tileset);
+              row += `<span data-cell="${x},${y}" data-tile="forest"${roadAttr} data-forest="${escAttr(ft)}" title="${title}">${ch}</span>`;
             } else if (tileKey === "crystal") {
               const variantSeed = rngUtil.n2(seedU32, x + 777, y + 777);
               const variants = ["blue", "pink", "green"];
               const v =
                 variants[Math.floor(variantSeed * variants.length)] || "blue";
-              const ch = pickVariant(tileKey, tileset, variantSeed);
-              row += `<span data-cell="${x},${y}" data-tile="crystal" data-crystal="${v}" title="${title}">${ch}</span>`;
+              const ch = allowRoadGlyph
+                ? `<span class="road-glyph">${roadGlyph(roadCells, N, x, y)}</span>`
+                : pickVariant(tileKey, tileset, variantSeed);
+              row += `<span data-cell="${x},${y}" data-tile="crystal"${roadAttr} data-crystal="${v}" title="${title}">${ch}</span>`;
             } else {
               const variantSeed = rngUtil.n2(seedU32, x + 999, y + 999);
-              const ch = pickVariant(tileKey, tileset, variantSeed);
-              row += `<span data-cell="${x},${y}" data-tile="${tileKey}" title="${title}">${ch}</span>`;
+              const ch = allowRoadGlyph
+                ? `<span class="road-glyph">${roadGlyph(roadCells, N, x, y)}</span>`
+                : pickVariant(tileKey, tileset, variantSeed);
+              row += `<span data-cell="${x},${y}" data-tile="${tileKey}"${roadAttr} title="${title}">${ch}</span>`;
             }
           }
           s += row + (y < N - 1 ? "\n" : "");
