@@ -11,13 +11,7 @@
         font-weight: 400;
         font-display: block;
       }
-      @font-face {
-        font-family: "CozetteVector";
-        src: url("CozetteVector.woff2") format("woff2");
-        font-style: normal;
-        font-weight: 400;
-        font-display: block;
-      }
+
 
       /* ====================== Sweetie16 (ONLY literal colors) ====================== */
       :root {
@@ -101,6 +95,14 @@
         --tile-desert: color-mix(in srgb, var(--sw4) 70%, var(--sw1));
         --tile-religious-death: var(--sw3);
         --tile-religious-monastery: var(--sw11);
+        --tile-crystal-blue: color-mix(in srgb, var(--sw11) 70%, var(--sw12));
+        --tile-crystal-pink: color-mix(in srgb, var(--sw1) 45%, var(--sw12));
+        --tile-crystal-green: color-mix(in srgb, var(--sw5) 55%, var(--sw12));
+        --tile-crystal: var(--tile-crystal-blue);
+      }
+
+      html {
+        font-size: 120%;
       }
 
       html,
@@ -135,7 +137,7 @@
       }
 
       h1 {
-        font-size: 16px;
+        font-size: 1rem;
         margin: 0 12px 0 0;
         color: var(--acc);
         flex: 1;
@@ -144,7 +146,7 @@
 
       label {
         color: var(--mut);
-        font-size: 12px;
+        font-size: 0.75rem;
       }
 
       .menu-toggle {
@@ -408,9 +410,24 @@
       #map span[data-tile="religious"][data-religious="monastery"] {
         color: var(--tile-religious-monastery);
       }
+      #map span[data-tile="crystal"] {
+        color: var(--tile-crystal);
+      }
+      #map span[data-tile="crystal"][data-crystal="blue"] {
+        color: var(--tile-crystal-blue);
+        filter: saturate(1);
+      }
+      #map span[data-tile="crystal"][data-crystal="pink"] {
+        color: var(--tile-crystal-pink);
+        filter: saturate(3);
+      }
+      #map span[data-tile="crystal"][data-crystal="green"] {
+        color: var(--tile-crystal-green);
+        filter: saturate(1);
+      }
 
       .small {
-        font-size: 12px;
+        font-size: 0.75rem;
         color: var(--mut);
       }
 
@@ -648,6 +665,7 @@
         "ridge",
         "reef", // not implemented yet
         "mycelium",
+        "crystals",
         "dead trees",
       ];
 
@@ -797,6 +815,7 @@
                 dunes: 0.35,
                 ridge: 0.45,
                 ruins: 0.3,
+                crystals: 0.7,
                 "dead trees": 0.25,
               },
             },
@@ -1906,7 +1925,7 @@
           dead: ["𐙘", "↑", "↟"],
           deciduous: ["𐌒", "Ọ"],
         },
-        desert: ["~", "≈"],
+        desert: ["≈"],
         mycelium: ["ᵠ", "ⵈ", "·", "‧", "∙"],
         mountain: {
           base: ["^"],
@@ -1954,7 +1973,7 @@
             // "☯",
           ],
         },
-        crystal: ["ж", "⩕"],
+        crystal: ["ж", "⩕", "꘍", "X"],
       };
 
       function baseGlyphs(def) {
@@ -3898,6 +3917,13 @@
             inc("grass", 1 + rarity * 0.4);
           });
 
+          applyFeature("crystals", 0.05, (rarity) => {
+            inc("plains", 1 + rarity * 0.5);
+            inc("forest", 1 - rarity * 0.45);
+            inc("grass", 1 - rarity * 0.35);
+            inc("water", 1 - rarity * 0.2);
+          });
+
           applyFeature("dead trees", 0.05, (rarity) => {
             inc("forest", 1 - rarity * 0.2);
             inc("grass", 1 - rarity * 0.15);
@@ -3958,13 +3984,6 @@
           );
 
           const ridgeRarity = biomeFeatureRarity(biome, "ridge");
-          tileKeyGrid = cleanupIsolatedWater(
-            seedU32,
-            tileKeyGrid,
-            weights,
-            N,
-            pickByWeights,
-          );
           tileKeyGrid = smoothMountains(
             seedU32,
             tileKeyGrid,
@@ -4002,6 +4021,12 @@
             N,
             biomeFeatureRarity(biome, "mycelium"),
           );
+          tileKeyGrid = applyCrystalPatches(
+            seedU32,
+            tileKeyGrid,
+            N,
+            biomeFeatureRarity(biome, "crystals"),
+          );
           const ruinCenters =
             worldMeta?.poiPlacements?.filter((p) => p.poiType === "ruins") ||
             [];
@@ -4011,6 +4036,21 @@
             N,
             ruinCenters,
             biomeFeatureRarity(biome, "ruins"),
+          );
+          tileKeyGrid = applyLavaEdge(tileKeyGrid, N);
+          tileKeyGrid = cleanupIsolatedWater(
+            seedU32,
+            tileKeyGrid,
+            weights,
+            N,
+            pickByWeights,
+          );
+          tileKeyGrid = cleanupIsolatedWater(
+            seedU32,
+            tileKeyGrid,
+            weights,
+            N,
+            pickByWeights,
           );
 
           const depthGrid = buildDepthGrid(
@@ -4251,7 +4291,8 @@
         for (let y = 0; y < N; y++) {
           for (let x = 0; x < N; x++) {
             if (tileKeyGrid[y][x] !== "water") continue;
-            if (countWaterNeighbors4(tileKeyGrid, N, x, y) >= 2) continue;
+            const waterN4 = countWaterNeighbors4(tileKeyGrid, N, x, y);
+            if (waterN4 >= 2) continue;
 
             const cand = new Map();
             for (const [nx, ny] of neighbors4(N, x, y)) {
@@ -4573,6 +4614,21 @@
         return bumpDepthCenters(tileKeyGrid, smoothed, N, liquidKey);
       }
 
+      function applyLavaEdge(tileKeyGrid, N) {
+        const next = tileKeyGrid.map((row) => row.slice());
+        for (let y = 0; y < N; y++) {
+          for (let x = 0; x < N; x++) {
+            if (tileKeyGrid[y][x] !== "lava") continue;
+            for (const [nx, ny] of neighbors8(N, x, y)) {
+              const k = tileKeyGrid[ny][nx];
+              if (k === "mountain" || k === "water") continue;
+              next[ny][nx] = "lava";
+            }
+          }
+        }
+        return next;
+      }
+
       /* ====================== Mountain height via distance-to-non-mountain ====================== */
       function distToNonMountain(tileKeyGrid, N) {
         const INF = 1e9;
@@ -4796,6 +4852,73 @@
               // Leave ruins as-is (1/2 chance) and keep walking.
             } else if (!isBlocked(k)) {
               next[y][x] = "mycelium";
+            }
+            const d = dirs[(rand() * dirs.length) | 0];
+            if (rand() < 0.25) {
+              x = clamp(x + d[0] + (rand() < 0.5 ? d[0] : 0), 0, N - 1);
+              y = clamp(y + d[1] + (rand() < 0.5 ? d[1] : 0), 0, N - 1);
+            } else {
+              x = clamp(x + d[0], 0, N - 1);
+              y = clamp(y + d[1], 0, N - 1);
+            }
+          }
+        }
+
+        return next;
+      }
+
+      function applyCrystalPatches(seedU32, tileKeyGrid, N, rarity) {
+        if (rarity <= 0) return tileKeyGrid;
+        const next = tileKeyGrid.map((row) => row.slice());
+        const rand = rngUtil.xs32(seedU32 ^ 0x1b873593);
+        const patches = Math.max(1, Math.floor(1 + rarity * 4));
+        const totalCells = Math.floor(
+          N * N * Math.min(0.85, 0.03 + rarity * 0.22),
+        );
+        const stepsPerPatch = Math.max(10, Math.floor(totalCells / patches));
+        const dirs = [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+          [1, 1],
+          [-1, 1],
+          [1, -1],
+          [-1, -1],
+        ];
+
+        const isBlocked = (k) =>
+          k === "water" ||
+          k === "lava" ||
+          k === "mountain" ||
+          k === "settlement" ||
+          k === "fungal-settlement" ||
+          k === "ruins" ||
+          k === "fungal-ruins";
+
+        const pickStart = () => {
+          for (let tries = 0; tries < 140; tries++) {
+            const x = (rand() * N) | 0;
+            const y = (rand() * N) | 0;
+            const k = next[y][x];
+            if (isBlocked(k)) continue;
+            if (k === "forest" && rand() < 0.45) continue;
+            return { x, y };
+          }
+          return { x: (rand() * N) | 0, y: (rand() * N) | 0 };
+        };
+
+        for (let p = 0; p < patches; p++) {
+          let { x, y } = pickStart();
+          const stepsThisPatch = Math.max(
+            10,
+            Math.floor(stepsPerPatch * (0.75 + rand() * 0.7)),
+          );
+          for (let i = 0; i < stepsThisPatch; i++) {
+            if (x < 0 || x >= N || y < 0 || y >= N) break;
+            const k = next[y][x];
+            if (!isBlocked(k)) {
+              if (k !== "forest" || rand() < 0.55) next[y][x] = "crystal";
             }
             const d = dirs[(rand() * dirs.length) | 0];
             if (rand() < 0.25) {
@@ -5203,6 +5326,13 @@
               const variantSeed = rngUtil.n2(seedU32, x + 999, y + 999);
               const ch = forestGlyphForType(ft, variantSeed, tileset);
               row += `<span data-cell="${x},${y}" data-tile="forest" data-forest="${escAttr(ft)}" title="${title}">${ch}</span>`;
+            } else if (tileKey === "crystal") {
+              const variantSeed = rngUtil.n2(seedU32, x + 777, y + 777);
+              const variants = ["blue", "pink", "green"];
+              const v =
+                variants[Math.floor(variantSeed * variants.length)] || "blue";
+              const ch = pickVariant(tileKey, tileset, variantSeed);
+              row += `<span data-cell="${x},${y}" data-tile="crystal" data-crystal="${v}" title="${title}">${ch}</span>`;
             } else {
               const variantSeed = rngUtil.n2(seedU32, x + 999, y + 999);
               const ch = pickVariant(tileKey, tileset, variantSeed);
