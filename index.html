@@ -661,6 +661,12 @@
        * 
       **/
 
+      // #region App Script Overview
+      // Sections: Constants, Theme Tables, Tileset, Lexicon Data, RNG Utilities,
+      // Naming + Lexicon Builders, World Builder, Map Generation, UI/State, Events.
+      // #endregion App Script Overview
+
+      // #region Constants + Feature Flags
       /* ====================== Tables (themes) ====================== */
       const geoFeatures = [
         "river-water",
@@ -692,6 +698,8 @@
           );
       }
 
+      // #endregion Constants + Feature Flags
+      // #region Theme Tables
       const themes = {
         fantasy: {
           biome: [
@@ -1922,6 +1930,8 @@
         ],
       };
 
+      // #endregion Theme Tables
+      // #region Tileset + Glyphs
       /* ====================== Tileset ========================================== */
       const tileset = {
         water: { depthGlyphs: { 1: ["~", "∾", "˜", "∿", "˷"], 2: "≈", 3: "≋" } },
@@ -2049,6 +2059,8 @@
 
       validateTileset(tileset);
 
+      // #endregion Tileset + Glyphs
+      // #region Lexicon Data
       const syllablePool = [
         "al",
         "ur",
@@ -2702,7 +2714,7 @@
         return out;
       })();
 
-      /* ====================== RNG + Utilities ====================== */
+      /* ====================== Core Utilities ====================== */
       function resolveInlineOptions(s, r) {
         if (typeof s !== "string") return s;
         const rand = typeof r === "function" ? r : Math.random;
@@ -2774,7 +2786,9 @@
         return out;
       }
 
-      /* ====================== RNG modules ====================== */
+      /* ====================== RNG Utilities ====================== */
+      // #endregion Lexicon Data
+      // #region RNG Utilities
       function h32(s) {
         let h = 5381 >>> 0;
         const str = String(s ?? "");
@@ -2803,8 +2817,11 @@
 
       function randSeed() {
         const a = new Uint32Array(1);
-        if (crypto && crypto.getRandomValues) crypto.getRandomValues(a);
-        else a[0] = (Math.random() * 4294967296) >>> 0;
+        if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+          crypto.getRandomValues(a);
+        } else {
+          a[0] = (Math.random() * 4294967296) >>> 0;
+        }
         return a[0].toString(36);
       }
 
@@ -2849,12 +2866,19 @@
         return a;
       }
 
-      const rngHash = { h32 };
-      const rngFactory = { xs32, randSeed };
-      const rngNoise = { n2 };
-      const rngSample = { oneOf, pickWeighted, shuffleDet, maybe };
-      const rngUtil = { ...rngHash, ...rngFactory, ...rngNoise, ...rngSample };
+      const rngUtil = {
+        h32,
+        xs32,
+        n2,
+        randSeed,
+        oneOf,
+        pickWeighted,
+        shuffleDet,
+        maybe,
+      };
 
+      // #endregion RNG Utilities
+      // #region Naming + Lexicon Builders
       /* ====================== Naming + Lexicon ====================== */
       class NameGenerator {
         constructor(
@@ -2994,6 +3018,8 @@
         return false;
       }
 
+      // #endregion Naming + Lexicon Builders
+      // #region World Builder
       /* ====================== World Placement ====================== */
       class WorldBuilder {
         constructor(mapGen, tileset, themeTables = themes) {
@@ -3751,6 +3777,8 @@
         }
       }
 
+      // #endregion World Builder
+      // #region Map Generation
       /* ====================== Map Generation ====================== */
       class MapGenerator {
         constructor() {}
@@ -5390,6 +5418,8 @@
         return s;
       }
 
+      // #endregion Map Generation
+      // #region UI + State
       /* ====================== State, Storage, UI ====================== */
       class UIController {
         constructor(doc, storage, worldBuilder, mapGenerator) {
@@ -5427,8 +5457,7 @@
       }
 
       const $ = (sel) => document.querySelector(sel);
-      const 
-        out = $("#out"),
+      const out = $("#out"),
         mapEl = $("#map"),
         seedIn = $("#seed"),
         seedShow = $("#seedShow"),
@@ -5783,6 +5812,8 @@
         updateHash();
       }
 
+      // #endregion UI + State
+      // #region Events + Init
       /* ====================== Events + Init ====================== */
       btnGen.onclick = doGenerate;
       seedIn.addEventListener("keydown", (e) => {
@@ -5855,6 +5886,8 @@
         }
         ui.generate();
       })();
+
+      // #endregion Events + Init
     </script>
   </body>
 </html>
