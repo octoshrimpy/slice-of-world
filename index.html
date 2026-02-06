@@ -1218,23 +1218,22 @@
           hookMods: [
             "near the <poi>",
             "within the biome",
-            "during <weather> conditions",
             "beneath the <poi>",
             "around the <poi>",
-            "when passing through the biome",
-            "when the wind shifted to <weather>",
+            "amid <weather>",
+            "under <weather> skies",
           ],
-          hookGlue: [
-            "and",
-            "but",
-            "while",
-            "as",
-            "yet",
-            "then",
-            "though",
-            "because",
-            "when",
-            "just as",
+          hookConsequences: [
+            "the enclave seals its gates",
+            "<faction> demands a blood-right hearing",
+            "a patrol searches the <poi>",
+            "a rival clan claims the <poi>",
+            "a warden is stripped of their mark",
+            "the tithe is doubled at the <poi>",
+            "a messenger from <poi> vanishes",
+            "<npc> is tasked to retrieve it",
+            "trade along the <poi> is suspended",
+            "a quiet exodus begins from the <poi>",
           ],
         },
 
@@ -1506,21 +1505,18 @@
           hookMods: [
             "near the <poi>",
             "inside the <poi>",
-            "during <weather>",
-            "as <weather> builds",
-            "after <weather> clears",
+            "amid <weather>",
+            "under <weather> skies",
           ],
-          hookGlue: [
-            "and",
-            "but",
-            "while",
-            "as",
-            "yet",
-            "then",
-            "though",
-            "because",
-            "even as",
-            "just as",
+          hookConsequences: [
+            "<faction> claims salvage rights on the <poi>",
+            "a quarantine ring is raised around the <poi>",
+            "the drift station issues a muster call",
+            "<npc> is dispatched to secure the <poi>",
+            "trade codes for the <poi> are revoked",
+            "a signal bounty is posted across the system",
+            "the relay grid throttles all traffic",
+            "crew shifts double along the <poi>",
           ],
         },
 
@@ -1781,21 +1777,18 @@
           hookMods: [
             "near the <poi>",
             "inside the <poi>",
-            "during <weather>",
-            "as <weather> builds",
-            "after <weather> clears",
+            "amid <weather>",
+            "under <weather> skies",
           ],
-          hookGlue: [
-            "and",
-            "but",
-            "while",
-            "as",
-            "yet",
-            "then",
-            "though",
-            "because",
-            "even as",
-            "just as",
+          hookConsequences: [
+            "<faction> claims the <poi> as protected ground",
+            "a scavenger gang marks the <poi> as taboo",
+            "the signal tower posts a bounty",
+            "<npc> goes missing while investigating",
+            "trade routes detour around the <poi>",
+            "a curfew is declared near the <poi>",
+            "water rations are cut at the <poi>",
+            "a warning fire burns all night",
           ],
         },
       };
@@ -3274,7 +3267,9 @@
           const base = resolveInlineOptions(s, r);
           return base
             .replace(/<poi>/g, () => ctx.poi?.() ?? "site")
-            .replace(/<weather>/g, () => ctx.weather?.() ?? "weather");
+            .replace(/<weather>/g, () => ctx.weather?.() ?? "weather")
+            .replace(/<faction>/g, () => ctx.faction?.() ?? "local faction")
+            .replace(/<npc>/g, () => ctx.npc?.() ?? "a local guide");
         }
 
         stem(s) {
@@ -3282,37 +3277,24 @@
         }
 
         composeHook(r, tt, ctx = {}) {
-          const h1 = rngUtil.oneOf(r, tt.hooks);
-          const m1 = rngUtil.maybe(r, 0.6)
-            ? this.resolvePlaceholders(rngUtil.oneOf(r, tt.hookMods), ctx, r)
-            : null;
+          const trigger = rngUtil.oneOf(r, tt.hooks);
+          const mod =
+            tt.hookMods && rngUtil.maybe(r, 0.6)
+              ? this.resolvePlaceholders(rngUtil.oneOf(r, tt.hookMods), ctx, r)
+              : null;
+          const consequence =
+            tt.hookConsequences && rngUtil.maybe(r, 0.3)
+              ? this.resolvePlaceholders(
+                  rngUtil.oneOf(r, tt.hookConsequences),
+                  ctx,
+                  r,
+                )
+              : null;
 
-          const hasSecond = rngUtil.maybe(r, 0.65);
-          if (!hasSecond) return m1 ? `${h1} ${m1}.` : `${h1}.`;
-
-          const glue = rngUtil.oneOf(r, tt.hookGlue);
-
-          const h2 = (() => {
-            let v;
-            let guard = 0;
-            do {
-              v = rngUtil.oneOf(r, tt.hooks);
-            } while (
-              (v === h1 || this.stem(v) === this.stem(h1)) &&
-              guard++ < 5
-            );
-            return v;
-          })();
-
-          const m2 = rngUtil.maybe(r, 0.6)
-            ? this.resolvePlaceholders(rngUtil.oneOf(r, tt.hookMods), ctx, r)
-            : null;
-
-          let left = m1 ? `${h1} ${m1}` : h1;
-          const right = m2 ? `${h2} ${m2}` : h2;
-
-          left = left.charAt(0).toUpperCase() + left.slice(1);
-          return `${left}, ${glue} ${right}.`;
+          const left = mod ? `${trigger} ${mod}` : trigger;
+          const leftCap = left.charAt(0).toUpperCase() + left.slice(1);
+          if (!consequence) return `${leftCap}.`;
+          return `${leftCap}. ${consequence.charAt(0).toUpperCase()}${consequence.slice(1)}.`;
         }
 
         composeMotive(
@@ -3946,10 +3928,18 @@
             ? hookPick.poiName
             : rngUtil.oneOf(r, tt.pois);
           const hookPOICell = hookPick ? hookPick.cell : null;
+          const hookFactionPick = rngUtil.oneOf(r, worldMeta.factionPlacements);
+          const hookFactionName = hookFactionPick
+            ? hookFactionPick.factionName
+            : rngUtil.oneOf(r, factions)?.name;
+          const hookNpcPick = rngUtil.oneOf(r, npcs);
+          const hookNpcName = hookNpcPick ? hookNpcPick.name : null;
 
           const hook = this.composeHook(r, tt, {
             poi: () => hookPOIName,
             weather: () => rngUtil.oneOf(r, tt.weather),
+            faction: () => hookFactionName ?? "local faction",
+            npc: () => hookNpcName ?? "a local guide",
           });
 
           let hookHtml = escHtml(hook);
