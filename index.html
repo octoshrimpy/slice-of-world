@@ -99,6 +99,8 @@
           var(--sw1)
         );
         --tile-plains: color-mix(in srgb, var(--sw5) 50%, var(--sw0));
+        --tile-stone-1: var(--sw15);
+        --tile-stone-2: var(--sw14);
         --tile-settlement: var(--sw2);
         --tile-poi: var(--sw13);
         --tile-camp: var(--sw3);
@@ -395,6 +397,12 @@
       #map span[data-tile="plains"] {
         color: var(--tile-plains);
       }
+      #map span[data-tile="stone"][data-stone="1"] {
+        color: var(--tile-stone-1);
+      }
+      #map span[data-tile="stone"][data-stone="2"] {
+        color: var(--tile-stone-2);
+      }
       #map span[data-tile="settlement"] {
         color: var(--tile-settlement);
       }
@@ -511,9 +519,6 @@
         border-radius: 999px;
         border: 1px solid var(--br);
         background: var(--pill-bg);
-      }
-      .pill.seedpill {
-        margin-top: 2rem;
       }
       .nowrap {
         white-space: nowrap;
@@ -1982,6 +1987,7 @@
         water: { depthGlyphs: { 1: ["~", "∾", "˜", "∿", "˷"], 2: "≈", 3: "≋" } },
         lava: { depthGlyphs: { 1: ["~", "∾", "˜", "∿"], 2: "≈", 3: "≋" } },
         plains: ["·", "‧", "∙"],
+        stone: ["·", "‧", "∙"],
         beach: ["·", "‧", "∙"],
         grass: ["ᵞ", "˯", "ˬ", "ˇ", "…", "ⵈ", '"', "'"],
         forest: {
@@ -4292,6 +4298,7 @@
             climate,
           );
           tileKeyGrid = applyLavaEdge(tileKeyGrid, N, worldMeta);
+          tileKeyGrid = applyStoneNearLava(tileKeyGrid, N);
           tileKeyGrid = cleanupIsolatedWater(
             seedU32,
             tileKeyGrid,
@@ -4901,6 +4908,19 @@
               if (protectedCells.has(`${nx},${ny}`)) continue;
               if (k === "mountain" || k === "water") continue;
               next[ny][nx] = "lava";
+            }
+          }
+        }
+        return next;
+      }
+
+      function applyStoneNearLava(tileKeyGrid, N) {
+        const next = tileKeyGrid.map((row) => row.slice());
+        for (let y = 0; y < N; y++) {
+          for (let x = 0; x < N; x++) {
+            if (tileKeyGrid[y][x] !== "plains") continue;
+            if (isAdjacentTo(tileKeyGrid, N, x, y, "lava")) {
+              next[y][x] = "stone";
             }
           }
         }
@@ -6263,10 +6283,14 @@
               row += `<span data-cell="${x},${y}" data-tile="crystal"${roadAttr}${ferryAttr} data-crystal="${v}" title="${title}">${ch}</span>`;
             } else {
               const variantSeed = rngUtil.n2(seedU32, x + 999, y + 999);
+              const stoneAttr =
+                tileKey === "stone"
+                  ? ` data-stone="${(x + y) % 2 ? 2 : 1}"`
+                  : "";
               const ch = allowRoadGlyph
                 ? `<span class="road-glyph">${roadGlyph(roadCells, N, x, y)}</span>`
                 : pickVariant(tileKey, tileset, variantSeed);
-              row += `<span data-cell="${x},${y}" data-tile="${tileKey}"${roadAttr}${ferryAttr} title="${title}">${ch}</span>`;
+              row += `<span data-cell="${x},${y}" data-tile="${tileKey}"${roadAttr}${ferryAttr}${stoneAttr} title="${title}">${ch}</span>`;
             }
           }
           s += row + (y < N - 1 ? "\n" : "");
