@@ -518,6 +518,20 @@
       .nowrap {
         white-space: nowrap;
       }
+      .seed-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      button.pill {
+        border-radius: 999px;
+        padding: 4px 8px;
+      }
+      button.pill.is-active {
+        background: color-mix(in srgb, var(--acc) 65%, var(--btn));
+        color: var(--bg);
+        border-color: color-mix(in srgb, var(--acc) 55%, var(--btn));
+      }
       .seedpill {
         margin-left: 6px;
         color: var(--fg);
@@ -613,6 +627,9 @@
         z-index: -1;
         pointer-events: none;
       }
+      body.show-all #map span.is-hot::before {
+        border-color: var(--hot-color, var(--hot));
+      }
 
       #out .xref {
         cursor: pointer;
@@ -624,6 +641,16 @@
         color: var(--acc);
         background: var(--hot-bg);
         outline: 1px solid var(--hot-outline);
+      }
+      body.show-all #out .xref.is-hot {
+        color: var(--hot-color, var(--acc));
+        background: color-mix(
+          in srgb,
+          var(--hot-color, var(--acc)) 18%,
+          transparent
+        );
+        outline: 1px solid
+          color-mix(in srgb, var(--hot-color, var(--acc)) 45%, transparent);
       }
     </style>
   </head>
@@ -664,9 +691,14 @@
         <span class="mapwrap">
           <pre id="map"></pre>
           <div id="mapTip" class="map-tip small" aria-live="polite"></div>
-          <span class="pill seedpill small">
-            Seed:
-            <strong id="seedShow">—</strong>
+          <span class="seed-controls">
+            <span class="pill seedpill small">
+              Seed:
+              <strong id="seedShow">—</strong>
+            </span>
+            <button id="showAll" class="pill small" type="button" aria-pressed="false">
+              Show All
+            </button>
           </span>
         </span>
       </div>
@@ -2013,6 +2045,25 @@
             // "☯",
           ],
         },
+        road: {
+          glyphs: {
+            nsew: "╬",
+            nsw: "╣",
+            nse: "╠",
+            nwe: "╩",
+            swe: "╦",
+            ns: "║",
+            we: "═",
+            ne: "╚",
+            nw: "╝",
+            se: "╔",
+            sw: "╗",
+            n: "║",
+            s: "║",
+            w: "═",
+            e: "═",
+          },
+        },
         crystal: ["ж", "⩕", "꘍", "X"],
       };
 
@@ -2070,6 +2121,11 @@
               debugWarn(
                 `Tileset "religious" missing glyphs for death/monastery`,
               );
+            continue;
+          }
+          if (key === "road") {
+            if (!def.glyphs)
+              debugWarn(`Tileset "road" missing glyphs`);
             continue;
           }
           if (!baseGlyphs(def)?.length)
@@ -5563,19 +5619,23 @@
         const w = has(-1, 0);
         const e = has(1, 0);
 
-        if (n && s && w && e) return "╬";
-        if (n && s && w) return "╣";
-        if (n && s && e) return "╠";
-        if (n && w && e) return "╩";
-        if (s && w && e) return "╦";
-        if (n && s) return "║";
-        if (w && e) return "═";
-        if (n && e) return "╚";
-        if (n && w) return "╝";
-        if (s && e) return "╔";
-        if (s && w) return "╗";
-        if (n || s) return "║";
-        return "═";
+        const g = tileset.road?.glyphs || {};
+        if (n && s && w && e) return g.nsew || "╬";
+        if (n && s && w) return g.nsw || "╣";
+        if (n && s && e) return g.nse || "╠";
+        if (n && w && e) return g.nwe || "╩";
+        if (s && w && e) return g.swe || "╦";
+        if (n && s) return g.ns || "║";
+        if (w && e) return g.we || "═";
+        if (n && e) return g.ne || "╚";
+        if (n && w) return g.nw || "╝";
+        if (s && e) return g.se || "╔";
+        if (s && w) return g.sw || "╗";
+        if (n) return g.n || "║";
+        if (s) return g.s || "║";
+        if (w) return g.w || "═";
+        if (e) return g.e || "═";
+        return g.we || "═";
       }
 
       function isPassable(tileKeyGrid, x, y) {
@@ -6264,6 +6324,7 @@
         btnPrev = $("#prev"),
         btnNext = $("#next"),
         btnCopySeed = $("#copySeed"),
+        btnShowAll = $("#showAll"),
         histList = $("#hist"),
         favList = $("#favs"),
         btnClrFav = $("#clrFav"),
@@ -6286,6 +6347,70 @@
         faves = [],
         idx = -1,
         current = "";
+
+      let showAllMode = false;
+      const SHOW_ALL_COLORS = [
+        "var(--sw4)",
+        "var(--sw5)",
+        "var(--sw6)",
+        "var(--sw10)",
+        "var(--sw11)",
+        "var(--sw2)",
+        "var(--sw3)",
+        "var(--sw9)",
+        "var(--sw7)",
+        "var(--sw14)",
+        "var(--sw13)",
+      ];
+
+      function applyShowAll(active) {
+        showAllMode = active;
+        document.body.classList.toggle("show-all", active);
+        if (btnShowAll) {
+          btnShowAll.classList.toggle("is-active", active);
+          btnShowAll.setAttribute("aria-pressed", active ? "true" : "false");
+        }
+
+        const xrefs = out.querySelectorAll(".xref[data-cell]");
+        const mapCells = mapEl.querySelectorAll("span[data-cell]");
+
+        if (active) {
+          const colorByCell = new Map();
+          let colorIndex = 0;
+          xrefs.forEach((el) => {
+            const cell = el.dataset.cell || "";
+            if (!colorByCell.has(cell)) {
+              colorByCell.set(
+                cell,
+                SHOW_ALL_COLORS[colorIndex % SHOW_ALL_COLORS.length],
+              );
+              colorIndex += 1;
+            }
+            el.classList.add("is-hot");
+            el.style.setProperty(
+              "--hot-color",
+              colorByCell.get(cell),
+            );
+          });
+          mapCells.forEach((el) => {
+            const cell = el.dataset.cell || "";
+            const color = colorByCell.get(cell);
+            if (!color) return;
+            el.classList.add("is-hot");
+            el.style.setProperty("--hot-color", color);
+          });
+          return;
+        }
+
+        xrefs.forEach((el) => {
+          el.classList.remove("is-hot");
+          el.style.removeProperty("--hot-color");
+        });
+        mapCells.forEach((el) => {
+          el.classList.remove("is-hot");
+          el.style.removeProperty("--hot-color");
+        });
+      }
 
       function loadLS() {
         try {
@@ -6399,12 +6524,14 @@
           window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
 
         const clearHot = () => {
+          if (showAllMode) return;
           document
             .querySelectorAll(".is-hot")
             .forEach((el) => el.classList.remove("is-hot"));
         };
 
         const clearFerryPreview = () => {
+          if (showAllMode) return;
           mapEl
             .querySelectorAll("span.is-ferry-path")
             .forEach((el) => {
@@ -6448,6 +6575,7 @@
         };
 
         const markCell = (cell, ferryId = null) => {
+          if (showAllMode) return;
           clearHot();
           clearFerryPreview();
           if (!cell) return;
@@ -6480,6 +6608,7 @@
         };
 
         out.addEventListener("pointerover", (e) => {
+          if (showAllMode) return;
           if (locked) return;
           if (e.pointerType && e.pointerType !== "mouse") return;
           const t = e.target.closest?.(".xref[data-cell]");
@@ -6488,6 +6617,7 @@
         });
 
         out.addEventListener("pointerout", (e) => {
+          if (showAllMode) return;
           if (locked) return;
           if (e.pointerType && e.pointerType !== "mouse") return;
           const t = e.target.closest?.(".xref[data-cell]");
@@ -6499,6 +6629,7 @@
         });
 
         mapEl.addEventListener("pointerover", (e) => {
+          if (showAllMode) return;
           if (locked) return;
           if (e.pointerType && e.pointerType !== "mouse") return;
           const t = e.target.closest?.("span[data-cell]");
@@ -6507,6 +6638,7 @@
         });
 
         mapEl.addEventListener("pointerout", (e) => {
+          if (showAllMode) return;
           if (locked) return;
           if (e.pointerType && e.pointerType !== "mouse") return;
           const t = e.target.closest?.("span[data-cell]");
@@ -6523,7 +6655,9 @@
             target?.closest?.("span[data-cell]");
           if (!t) return false;
           locked = true;
-          markCell(t.dataset.cell, t.dataset.ferryId || null);
+          if (!showAllMode) {
+            markCell(t.dataset.cell, t.dataset.ferryId || null);
+          }
           setMapTip(getTitleForCell(t.dataset.cell));
           return true;
         };
@@ -6584,6 +6718,7 @@
         mapEl.dataset.deadTrees = mapFlags?.deadTrees ? "1" : "";
         mapEl.dataset.desert = mapFlags?.desert ? "1" : "";
         ui.bindCrossHover();
+        if (showAllMode) applyShowAll(true);
       }
 
       function buildTilesetShowcaseGroups() {
@@ -6681,6 +6816,10 @@
         const gCrystal = addGroup("crystal");
         addList(gCrystal, "crystal", tileset.crystal);
 
+        const gRoad = addGroup("road");
+        const road = tileset.road?.glyphs || {};
+        addList(gRoad, "road", Object.values(road));
+
         return groups.filter((g) => g.entries.length);
       }
 
@@ -6727,6 +6866,7 @@
         mapEl.dataset.desert = "";
         out.textContent = "Tileset showcase";
         ui.bindCrossHover();
+        if (showAllMode) applyShowAll(true);
       }
 
       function shareURL() {
@@ -6754,6 +6894,10 @@
       btnCopySeed.onclick = () => {
         if (current) navigator.clipboard?.writeText(current);
       };
+
+      if (btnShowAll) {
+        btnShowAll.onclick = () => applyShowAll(!showAllMode);
+      }
 
       if (seedPill) {
         seedPill.addEventListener("click", (e) => {
