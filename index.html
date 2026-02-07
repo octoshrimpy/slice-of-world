@@ -642,6 +642,11 @@
         border-radius: 4px;
         padding: 0 2px;
       }
+      #out .xref:focus-visible,
+      #map span[data-cell]:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+      }
 
       #out .xref.is-hot {
         color: var(--acc);
@@ -7324,6 +7329,25 @@
         ui.generate();
       }
 
+      function applyCrossHoverA11y() {
+        out.querySelectorAll(".xref[data-cell]").forEach((el) => {
+          el.tabIndex = 0;
+          el.setAttribute("role", "button");
+          if (!el.getAttribute("aria-label")) {
+            const label = (el.textContent || "reference").trim();
+            const cell = el.dataset.cell ? ` at ${el.dataset.cell}` : "";
+            el.setAttribute("aria-label", `${label}${cell}`);
+          }
+        });
+
+        mapEl.querySelectorAll("span[data-cell]").forEach((el) => {
+          el.tabIndex = 0;
+          el.setAttribute("role", "button");
+          const title = el.getAttribute("title");
+          if (title) el.setAttribute("aria-label", title);
+        });
+      }
+
       /* ====================== Cross-hover binding ====================== */
       let _crossHoverBound = false;
 
@@ -7332,8 +7356,6 @@
         _crossHoverBound = true;
         let locked = false;
         const mapTipEl = document.getElementById("mapTip");
-        const canShowTip =
-          window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
 
         const clearHot = () => {
           if (showAllMode) return;
@@ -7354,7 +7376,7 @@
         };
 
         const setMapTip = (text) => {
-          if (!mapTipEl || !canShowTip) return;
+          if (!mapTipEl) return;
           mapTipEl.textContent = text || "";
         };
 
@@ -7461,6 +7483,53 @@
           clearFerryPreview();
         });
 
+        const isCrossTarget = (node) =>
+          !!node?.closest?.(".xref[data-cell], span[data-cell]");
+
+        out.addEventListener("focusin", (e) => {
+          if (showAllMode || locked) return;
+          const t = e.target.closest?.(".xref[data-cell]");
+          if (!t) return;
+          markCell(t.dataset.cell, t.dataset.ferryId || null);
+          setMapTip(getTitleForCell(t.dataset.cell));
+        });
+        mapEl.addEventListener("focusin", (e) => {
+          if (showAllMode || locked) return;
+          const t = e.target.closest?.("span[data-cell]");
+          if (!t) return;
+          markCell(t.dataset.cell, t.dataset.ferryId || null);
+          setMapTip(getTitleForCell(t.dataset.cell));
+        });
+
+        const onFocusOut = (e) => {
+          if (showAllMode || locked) return;
+          if (isCrossTarget(e.relatedTarget)) return;
+          clearHot();
+          clearFerryPreview();
+          setMapTip("");
+        };
+        out.addEventListener("focusout", onFocusOut);
+        mapEl.addEventListener("focusout", onFocusOut);
+
+        const onKeyToggle = (e) => {
+          const t = e.target.closest?.(".xref[data-cell], span[data-cell]");
+          if (!t) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            lockFromTarget(t);
+            return;
+          }
+          if (e.key === "Escape" && locked) {
+            e.preventDefault();
+            locked = false;
+            clearHot();
+            clearFerryPreview();
+            setMapTip("");
+          }
+        };
+        out.addEventListener("keydown", onKeyToggle);
+        mapEl.addEventListener("keydown", onKeyToggle);
+
         const lockFromTarget = (target) => {
           const t =
             target?.closest?.(".xref[data-cell]") ||
@@ -7527,6 +7596,7 @@
         );
         out.innerHTML = html;
         mapEl.innerHTML = mapGrid;
+        applyCrossHoverA11y();
         mapEl.dataset.deadTrees = mapFlags?.deadTrees ? "1" : "";
         mapEl.dataset.desert = mapFlags?.desert ? "1" : "";
         ui.bindCrossHover();
@@ -7674,6 +7744,7 @@
         }
 
         mapEl.innerHTML = s;
+        applyCrossHoverA11y();
         mapEl.dataset.deadTrees = "";
         mapEl.dataset.desert = "";
         out.textContent = "Tileset showcase";
