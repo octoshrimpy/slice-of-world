@@ -4673,6 +4673,7 @@
             worldMeta,
             roadInfo?.cells,
           );
+          tileKeyGrid = TerrainOps.applyStoneAtLavaWaterBorders(tileKeyGrid, N);
           if (worldMeta?.settlementTypeByCell && roadInfo?.cells) {
             for (const cell of worldMeta.settlementTypeByCell.keys()) {
               const [xStr, yStr] = cell.split(",");
@@ -5251,6 +5252,22 @@
               if (tileKeyGrid[y][x] !== "plains") continue;
               if (isAdjacentTo(tileKeyGrid, N, x, y, "lava")) {
                 next[y][x] = "stone";
+              }
+            }
+          }
+          return next;
+        }
+
+        static applyStoneAtLavaWaterBorders(tileKeyGrid, N) {
+          const next = tileKeyGrid.map((row) => row.slice());
+          for (let y = 0; y < N; y++) {
+            for (let x = 0; x < N; x++) {
+              if (tileKeyGrid[y][x] !== "lava") continue;
+              for (const [nx, ny] of GridMath.neighbors8(N, x, y)) {
+                if (tileKeyGrid[ny][nx] === "water") {
+                  next[y][x] = "stone";
+                  break;
+                }
               }
             }
           }
