@@ -7252,10 +7252,18 @@
           const li = document.createElement("li");
           li.textContent = s;
           li.title = "Load seed";
-          li.onclick = () => {
+          li.tabIndex = 0;
+          li.setAttribute("role", "button");
+          const loadSeed = () => {
             ui.setCurrentSeed(s, true);
             ui.generate();
           };
+          li.addEventListener("click", loadSeed);
+          li.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            loadSeed();
+          });
           histList.appendChild(li);
         });
 
@@ -7264,10 +7272,18 @@
           const li = document.createElement("li");
           li.textContent = s;
           li.title = "Load favorite";
-          li.onclick = () => {
+          li.tabIndex = 0;
+          li.setAttribute("role", "button");
+          const loadFavorite = () => {
             ui.setCurrentSeed(s, true);
             ui.generate();
           };
+          li.addEventListener("click", loadFavorite);
+          li.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            loadFavorite();
+          });
           favList.appendChild(li);
         });
       }
